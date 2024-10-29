@@ -3,7 +3,7 @@
 1. Create a virtual environment
 
 ```sh
-VENV=<your-python-virtual-environment-dir>
+VENV=<your-python-virtual-environment-dir> # e.g. $HOME/acm-troubleshooter/.venv
 mkdir -p $VENV
 python -m venv $VENV
 source $VENV/bin/activate
@@ -24,6 +24,8 @@ python -m apps.troubleshooter --runbooks=<your-runbooks-dir> \
     --cluster-mg=<your-managed-cluster-must-gather-dir> \
     <your-issue>
 ```
+
+**Note**: you should install the [`omc` command](https://github.com/gmeghnag/omc) on your host machine.
 
 ### How does this work
 
@@ -51,7 +53,7 @@ For a runbook, it should
 
 ```sh
 export JIRA_TOKEN=<your-jira-token> # https://issues.redhat.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens
-export GROQ_API_KEY=<your-groq-api-key> # https://console.groq.com/docs/models
+export GROQ_API_KEY=<your-groq-api-key>
 
 python -m apps.rbgenerator <your-jira-issue-id>
 ```
@@ -72,3 +74,14 @@ python -m apps.rbgenerator <your-jira-issue-id>
 
     {text}
     ```
+## Diagnose an ACM issue using a chatbot with ACM doc
+
+1. Download the ACM doc embedding data from [here](https://drive.google.com/file/d/1H-ColxJFdH2KiSqdmKITmrJm3VToADb0/view?usp=sharing)
+2. Unzip the embedding data to a directory
+3. Run the following command
+
+```sh
+export INDEX_DIR=<your-unziped-embedding-data-directory>
+export GROQ_API_KEY=<your-groq-api-key>
+python -m apps.chatbot
+```
