@@ -24,16 +24,28 @@ logger = logging.getLogger(__name__)
 current_dir = os.path.dirname(os.path.realpath(__file__))
 work_dir=os.path.join(current_dir, "__workspace__")
 
+# llm_config = {
+#     "config_list": [
+#         {
+#             "model": "llama-3.1-70b-versatile",
+#             "api_key": os.getenv("GROQ_API_KEY"),
+#             "api_type": "groq",
+#             "temperature": 0.0,
+#             "price": [0, 0],
+#         }
+#     ]
+# }
+
 llm_config = {
     "config_list": [
         {
-            "model": "llama-3.1-70b-versatile",
-            "api_key": os.getenv("GROQ_API_KEY"),
-            "api_type": "groq",
-            "temperature": 0.0,
+            "model": "qwen2.5:14b",
+            "api_key": "NotRequired",
+            "base_url": "http://localhost:11434/v1",
             "price": [0, 0],
         }
-    ]
+    ],
+    "cache_seed": None,
 }
 
 def user_agent(human_input_mode):
@@ -126,6 +138,10 @@ def main(runbooks, hub_mg, cluster_mg, debug, silent, issue):
     
     logger.debug("runbooks=%s,hub-must-gather=%s,managed-cluster-must-gather=%s", runbooks, hub_mg, cluster_mg)
 
+    import nltk
+    nltk.download('punkt_tab')
+    nltk.download('averaged_perceptron_tagger_eng')
+    
     runbook_contents = load_runbooks(runbooks)
 
     # TODO If the content is too large, try to compress the content
