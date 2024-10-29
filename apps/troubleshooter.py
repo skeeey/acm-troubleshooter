@@ -24,29 +24,29 @@ logger = logging.getLogger(__name__)
 current_dir = os.path.dirname(os.path.realpath(__file__))
 work_dir=os.path.join(current_dir, "__workspace__")
 
-# llm_config = {
-#     "config_list": [
-#         {
-#             "model": "llama-3.1-70b-versatile",
-#             "api_key": os.getenv("GROQ_API_KEY"),
-#             "api_type": "groq",
-#             "temperature": 0.0,
-#             "price": [0, 0],
-#         }
-#     ]
-# }
-
 llm_config = {
     "config_list": [
         {
-            "model": "qwen2.5:14b",
-            "api_key": "NotRequired",
-            "base_url": "http://localhost:11434/v1",
+            "model": "llama-3.1-70b-versatile",
+            "api_key": os.getenv("GROQ_API_KEY"),
+            "api_type": "groq",
+            "temperature": 0.0,
             "price": [0, 0],
         }
-    ],
-    "cache_seed": None,
+    ]
 }
+
+# llm_config = {
+#     "config_list": [
+#         {
+#             "model": "qwen2.5:14b",
+#             "api_key": "NotRequired",
+#             "base_url": "http://localhost:11434/v1",
+#             "price": [0, 0],
+#         }
+#     ],
+#     "cache_seed": None,
+# }
 
 def user_agent(human_input_mode):
     return autogen.UserProxyAgent(
