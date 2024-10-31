@@ -24,29 +24,29 @@ logger = logging.getLogger(__name__)
 current_dir = os.path.dirname(os.path.realpath(__file__))
 work_dir=os.path.join(current_dir, "__workspace__")
 
-llm_config = {
-    "config_list": [
-        {
-            "model": "llama-3.1-70b-versatile",
-            "api_key": os.getenv("GROQ_API_KEY"),
-            "api_type": "groq",
-            "temperature": 0.0,
-            "price": [0, 0],
-        }
-    ]
-}
-
 # llm_config = {
 #     "config_list": [
 #         {
-#             "model": "qwen2.5:14b",
-#             "api_key": "NotRequired",
-#             "base_url": "http://localhost:11434/v1",
+#             "model": "llama-3.1-70b-versatile",
+#             "api_key": os.getenv("GROQ_API_KEY"),
+#             "api_type": "groq",
+#             "temperature": 0.0,
 #             "price": [0, 0],
 #         }
-#     ],
-#     "cache_seed": None,
+#     ]
 # }
+
+llm_config = {
+    "config_list": [
+        {
+            "model": "qwen2.5:14b",
+            "api_key": "NotRequired",
+            "base_url": "http://localhost:11434/v1",
+            "price": [0, 0],
+        }
+    ],
+    "cache_seed": None,
+}
 
 def user_agent(human_input_mode):
     return autogen.UserProxyAgent(
@@ -62,7 +62,7 @@ def planner_agent(llm_config, system_msg, human_input_mode):
         description="Planner analyzes the User issues and creating diagnosis plan.",
         is_termination_msg=is_termination_message,
         human_input_mode=human_input_mode,
-        llm_config=llm_config.copy(),
+        llm_config=llm_config,
         system_message=system_msg,
     )
 
@@ -72,11 +72,11 @@ def analyst_agent(llm_config, system_msg, human_input_mode):
         description="Analyst analyzes the Planner's plan and converts the plan to executable command/scripts.",
         is_termination_msg=is_termination_message,
         human_input_mode=human_input_mode,
-        llm_config=llm_config.copy(),
+        llm_config=llm_config,
         system_message=system_msg,
     )
 
-def executor_agent():
+def executor_agent(human_input_mode):
     return autogen.UserProxyAgent(
         name="Executor",
         description="Executor executes the code written by the Analyst and reports the result to Planner.",
@@ -87,7 +87,7 @@ def executor_agent():
                 work_dir=work_dir,
             )
         },
-        human_input_mode="NEVER",
+        human_input_mode=human_input_mode,
     )
 
 def selection(user, planner, analyst, executor, human_input_mode="NEVER"):
@@ -160,7 +160,7 @@ def main(runbooks, hub_mg, cluster_mg, debug, silent, issue):
     user = user_agent(human_input_mode)
     planner = planner_agent(llm_config, planner_prompt, human_input_mode)
     analyst = analyst_agent(llm_config, analyst_prompt, human_input_mode)
-    executor = executor_agent()
+    executor = executor_agent(human_input_mode)
 
     user.reset()
     planner.reset()
