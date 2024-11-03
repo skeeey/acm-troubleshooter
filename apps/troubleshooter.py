@@ -100,12 +100,10 @@ def selection(user, planner, analyst, executor, human_input_mode="NEVER"):
         if last_speaker == user:
             return planner
         if last_speaker == planner:
-            wait(human_input_mode=human_input_mode)
             return analyst
         if last_speaker == analyst:
             return executor
         if last_speaker == executor:
-            wait(human_input_mode=human_input_mode)
             return planner
         
         return None
