@@ -10,7 +10,7 @@ from autogen.coding import LocalCommandLineCodeExecutor
 # from autogen.agentchat.contrib.capabilities.transforms import TextMessageCompressor
 from dotenv import load_dotenv
 from tools.loader import load_runbooks
-from prompts.templates import PLANNER_PROMPT, ANALYST_PROMPT
+from prompts.templates import PLANNER_PROMPT, CONVERTER_PROMPT
 
 # log settings
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -59,35 +59,36 @@ def user_agent(human_input_mode):
 def planner_agent(llm_config, system_msg, human_input_mode):
     return autogen.AssistantAgent(
         name="Planner",
-        description="Planner analyzes the User issues and creating diagnosis plan.",
+        description="Planner analyzes the User issues and creating troubleshooting plan.",
         is_termination_msg=is_termination_message,
         human_input_mode=human_input_mode,
         llm_config=llm_config.copy(),
         system_message=system_msg,
     )
 
-def analyst_agent(llm_config, system_msg, human_input_mode):
+# TODO combine the convert and executor together
+def converter_agent(llm_config, system_msg, human_input_mode):
     return autogen.AssistantAgent(
-        name="Analyst",
-        description="Analyst analyzes the Planner's plan and converts the plan to executable command/scripts.",
+        name="Executor",
+        description="Converter converts the Planner's plan to executable commands.",
         is_termination_msg=is_termination_message,
         human_input_mode=human_input_mode,
         llm_config=llm_config.copy(),
         system_message=system_msg,
     )
 
-def executor_agent():
+def executor_agent(human_input_mode):
     return autogen.UserProxyAgent(
         name="Executor",
-        description="Executor executes the code written by the Analyst and reports the result to Planner.",
+        description="Executor executes the commands of the Converter and reports the result to Planner.",
         llm_config=False,
         code_execution_config={
             "executor": LocalCommandLineCodeExecutor(
-                timeout=10,
+                timeout=120,
                 work_dir=work_dir,
             )
         },
-        human_input_mode="NEVER",
+        human_input_mode=human_input_mode,
     )
 
 def selection(user, planner, analyst, executor, human_input_mode="NEVER"):
@@ -122,7 +123,7 @@ def wait(human_input_mode, wait_time=5):
 
 @click.command()
 @click.option("--runbooks", required=True, type=click.Path(file_okay=True, dir_okay=True, exists=True), help="the path of runbooks")
-@click.option("--hub-mg", required=True, type=click.Path(file_okay=False, dir_okay=True, exists=True), help="the path of hub must-gather")
+@click.option("--hub-mg", type=click.Path(file_okay=False, dir_okay=True, exists=True), help="the path of hub must-gather")
 @click.option("--cluster-mg", type=click.Path(file_okay=False, dir_okay=True, exists=True), help="the path of managed cluster must-gather")
 @click.option("--debug", is_flag=True, default=False, help="enable debug mode")
 @click.option("--silent", is_flag=True, default=False, help="silent the agents")
@@ -151,26 +152,26 @@ def main(runbooks, hub_mg, cluster_mg, debug, silent, issue):
     # logger.debug(compressed_contents)
 
     planner_prompt = PLANNER_PROMPT.format(context=runbook_contents)
-    analyst_prompt = ANALYST_PROMPT.format(hub_dir=hub_mg, spoke_dir=cluster_mg)
+    converter_prompt = CONVERTER_PROMPT.format(hub_dir=hub_mg, spoke_dir=cluster_mg)
     
     logger.debug(llm_config)
     logger.debug(planner_prompt)
-    logger.debug(analyst_prompt)
+    logger.debug(converter_prompt)
 
     user = user_agent(human_input_mode)
     planner = planner_agent(llm_config, planner_prompt, human_input_mode)
-    analyst = analyst_agent(llm_config, analyst_prompt, human_input_mode)
-    executor = executor_agent()
+    converter = converter_agent(llm_config, converter_prompt, human_input_mode)
+    executor = executor_agent(human_input_mode)
 
     user.reset()
     planner.reset()
-    analyst.reset()
+    converter.reset()
 
     group_chat = autogen.GroupChat(
-        agents=[user, planner, analyst, executor],
+        agents=[user, planner, converter, executor],
         max_round=50,
         messages=[],
-        speaker_selection_method=selection(user, planner, analyst, executor, human_input_mode),
+        speaker_selection_method=selection(user, planner, converter, executor, human_input_mode),
         send_introductions=True,
     )
     user.initiate_chat(
