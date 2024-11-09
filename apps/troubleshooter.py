@@ -139,9 +139,9 @@ def main(runbooks, hub_mg, cluster_mg, debug, silent, issue):
     
     logger.debug("runbooks=%s,hub-must-gather=%s,managed-cluster-must-gather=%s", runbooks, hub_mg, cluster_mg)
 
-    import nltk
-    nltk.download('punkt_tab')
-    nltk.download('averaged_perceptron_tagger_eng')
+    # import nltk
+    # nltk.download('punkt_tab')
+    # nltk.download('averaged_perceptron_tagger_eng')
     
     runbook_contents = load_runbooks(runbooks)
 
