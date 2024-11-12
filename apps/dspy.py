@@ -6,7 +6,7 @@ from tools.loader import load_runbooks
 load_dotenv()
 
 #lm = dspy.LM('llama-3.1-70b-versatile', api_base='https://api.groq.com/openai/v1', api_key=os.getenv("GROQ_API_KEY"))
-lm = dspy.LM('ollama_chat/qwen2.5:14b', api_base='http://localhost:11434', api_key='')
+lm = dspy.LM('ollama_chat/qwen2.5:32b', api_base='http://localhost:11434', api_key='')
 dspy.configure(lm=lm)
 
 
