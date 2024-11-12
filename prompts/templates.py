@@ -35,6 +35,9 @@ Your tasks:
 
 Important notes:
 Since must-gather is used for diagnosis, you should:
+- Do not generate delete/create/update/apply/patch in shell commands.
+- Do not generate if-else statements in shell commands.
+- Only output shell commands.
 - Use omc instead of oc or kubectl.
 - If the cluster name is 'local-cluster,' initialize the omc command with omc use {hub_dir}.
 - If the commands will run in the hub cluster, use omc use {hub_dir}.
