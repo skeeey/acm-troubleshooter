@@ -32,8 +32,19 @@ notes="""
 """
 
 class Convert(dspy.Signature):
-    """Convert a troubleshooting plan to executable commands."""
-    notes: str = dspy.InputField(desc="The important notes for convert")
+    """Convert a troubleshooting plan to executable commands.
+
+    - Do not generate delete/create/update/apply/patch in shell commands.
+    - Do not generate if-else statements in shell commands.
+    - Only output shell commands.
+    - Use omc instead of oc or kubectl.
+    - If the cluster name is 'local-cluster,' initialize the omc command with omc use <hub_must_gather_dir>.
+    - If the commands will run in the hub cluster, use omc use <hub_must_gather_dir>.
+    - If the commands will run in a managed cluster, initialize the omc command with omc use <spoke_must_gather_dir>.
+    - If the cluster name is 'local-cluster', its klusterlet is running in the hub cluster.
+    """
+
+    #notes: str = dspy.InputField(desc="The important notes for convert")
     troubleshooting_plan: str = dspy.InputField(desc="The troubleshooting plan")
     hub_must_gather_dir: str = dspy.InputField(desc="The hub must-gather dir")
     spoke_must_gather_dir: str = dspy.InputField(desc="The spoke must-gather dir")
@@ -42,7 +53,7 @@ class Convert(dspy.Signature):
 
 commands = dspy.ChainOfThought("troubleshooting_plan -> commands")
 print(commands(
-    notes=notes,
+    #notes=notes,
     troubleshooting_plan=result["troubleshooting_plan"],
     hub_must_gather_dir="/Users/wliu1/mg-hub",
 ))
