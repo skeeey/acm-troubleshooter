@@ -52,8 +52,11 @@ For a runbook, it should
 ## Generate a draft runbooks from a Jira issue
 
 ```sh
+# Install the Ollama https://ollama.com/
+
+ollama pull qwen2.5:32b # Pull the qwen2.5:32b model
+
 export JIRA_TOKEN=<your-jira-token> # https://issues.redhat.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens
-export GROQ_API_KEY=<your-groq-api-key>
 
 python -m apps.rbgenerator <your-jira-issue-id>
 ```
@@ -74,6 +77,7 @@ python -m apps.rbgenerator <your-jira-issue-id>
 
     {text}
     ```
+
 ## Diagnose an ACM issue using a chatbot with ACM doc
 
 1. Download the ACM doc embedding data from [here](https://drive.google.com/file/d/1H-ColxJFdH2KiSqdmKITmrJm3VToADb0/view?usp=sharing)

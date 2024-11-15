@@ -28,7 +28,7 @@ def main(issue):
     text=f"{issue.fields.summary} \n {issue.fields.description} \n {all_comments}"
 
     # llm = Groq(model="llama-3.1-70b-versatile", api_key=os.getenv("GROQ_API_KEY"))
-    llm = Ollama(model="qwen2.5:14b", request_timeout=600.0)
+    llm = Ollama(model="qwen2.5:32b", request_timeout=600.0)
 
     messages = [
         ChatMessage(
