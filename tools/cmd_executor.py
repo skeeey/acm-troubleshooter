@@ -6,7 +6,14 @@ import time
 
 logger = logging.getLogger(__name__)
 
-def execute_commands(commands: str, timeout=120) -> str:
+def execute_commands(commands: str, need_to_approve=False, timeout=120) -> str:
+    if need_to_approve:
+        approve = input(f"👮 Approve to execute the below commands?\n{commands}\n(y/n) ")
+        if approve.lower() != "y" and approve.lower() != "yes":
+            exit(0)
+    else:
+        print(f"💻 Commands:\n{commands}")
+    
     now = int(time.time())
     work_dir=tempfile.gettempdir()
     cmd_file = os.path.join(work_dir, f"acm_troubleshooting_code_{now}.sh")
@@ -37,4 +44,7 @@ def execute_commands(commands: str, timeout=120) -> str:
     if exit_code != 0:
         logger.warning("exitcode=%d, cmd=%s, output=%s", exit_code, cmd_file, logs_all)
     
+    print(f"Exit Code: {exit_code}\nOutputs:\n{logs_all}")
+    
+    time.sleep(float(5))
     return logs_all

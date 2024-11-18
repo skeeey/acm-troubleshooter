@@ -27,24 +27,6 @@ def load_runbooks(dir, exclude_list=None):
     all = "\n\n---\n\nRunbook: ".join(docs)
     return "Runbook: " + all
 
-def load_runbook_list(dir, exclude_list=None) -> list[str]:
-    if exclude_list is None:
-        exclude_list = ["README.md", "SECURITY.md", "GUIDELINE.md", "index.md"]
-
-    files = list_files(dir, exclude_list)
-    docs = []
-    for md in files:
-        #  with open(md, encoding="utf8") as f:
-        #     text = optional_decode(f.read())
-        #     docs.append(text)
-        # TODO: need test, this will output plain text
-        elements = partition_md(filename=md)
-        text = "\n\n".join([str(el) for el in elements])
-        docs.append(text)
-    
-    return docs
-
-
 def load_local_data(local_data_dir):
     file_extractor = {
         ".md": MarkdownReader(),
@@ -115,3 +97,6 @@ def list_files(start_path, exclude_list, suffix=".md"):
                 file_list.append(os.path.join(root, f))
 
     return file_list
+
+if __name__ == "__main__":
+    print(load_runbooks("/Users/wliu1/Workspace/foundation-docs"))
