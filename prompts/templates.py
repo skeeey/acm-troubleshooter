@@ -29,6 +29,7 @@ DSPY_EXECUTOR_EXAMPLES = """
     echo "ManagedClusterConditionAvailable for cluster1: ${available_status}"
 """
 
+# TODO using a grace prompt to stop the troubleshooting process
 DSPY_REPLAN_NOTICES = """
 If the new plan contains `oc apply` command, Set the termination to true, otherwise set it to false.
 """

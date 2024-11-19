@@ -15,19 +15,30 @@ source $VENV/bin/activate
 make deps
 ```
 
+3. Instal [`omc` command](https://github.com/gmeghnag/omc)
+
 ## Diagnose an ACM issue with runbooks and must-gather
 
 ```sh
-export GROQ_API_KEY=<your-groq-api-key> # https://console.groq.com/docs/models
+# For example:
+# - Using groq https://console.groq.com llama-3.1-70b-versatile
+#   export LM_MODEL=llama-3.1-70b-versatile
+#   export LM_API_BASE=https://api.groq.com/openai/v1
+#   export LM_API_KEY=<your-groq-api-key>
+# - Using ollama qwen2.5:32b
+#   export LM_MODEL=ollama/qwen2.5:32b
+#   export LM_API_BASE=http://localhost:11434
+export LM_MODEL=<your-lm-model>
+export LM_API_BASE=<your-lm-api> 
+export LM_API_KEY=<your-lm-api-key>
+
 python -m apps.troubleshooter --runbooks=<your-runbooks-dir> \
     --hub-mg=<your-hub-must-gather-dir> \
     --cluster-mg=<your-managed-cluster-must-gather-dir> \
     <your-issue>
 ```
 
-**Note**: you should install the [`omc` command](https://github.com/gmeghnag/omc) on your host machine.
-
-### Runbook Guideline
+## Runbook Guideline
 
 For a runbook, it should
 
@@ -40,7 +51,7 @@ For a runbook, it should
     - specify whether the step should be run on the hub cluster or the managed cluster;
     - if one step needs to refer to the other runbooks, using the related runbook title as the markdown link text, for example, `[runbook_title](runbook_location)`
 
-### Refers to
+## Refers to
 - https://github.com/stanfordnlp/dspy
 - https://github.com/langchain-ai/langgraph
 - https://github.com/gmeghnag/omc

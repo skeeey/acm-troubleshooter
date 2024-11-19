@@ -18,7 +18,11 @@ LOG_FORMAT = "%(levelname)s: [%(asctime)s, %(module)s, line:%(lineno)d] %(messag
 logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
-lm = dspy.LM('llama-3.1-70b-versatile', api_base='https://api.groq.com/openai/v1', api_key=os.getenv("GROQ_API_KEY"))
+lm = dspy.LM(
+    model=os.getenv("LM_MODEL"),
+    api_base=os.getenv("LM_API_BASE"),
+    api_key=os.getenv("LM_API_KEY"),
+)
 dspy.configure(lm=lm)
 
 @click.command()
