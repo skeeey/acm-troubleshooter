@@ -10,6 +10,9 @@ from typing import List
 from unstructured.partition.md import partition_md
 
 def load_runbooks(dir, exclude_list=None):
+    # import nltk
+    # nltk.download('punkt_tab')
+    # nltk.download('averaged_perceptron_tagger_eng')
     if exclude_list is None:
         exclude_list = ["README.md", "SECURITY.md", "GUIDELINE.md", "index.md"]
 
