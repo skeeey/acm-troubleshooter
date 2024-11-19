@@ -1,8 +1,10 @@
+# coding: utf-8
+
 import logging
 import dspy
 from graph.signatures import Planner, Executor, Replan
 from graph.state import new_status
-from prompts.templates import DSPY_PLANNER_NOTICES, DSPY_EXECUTOR_RULES, DSPY_EXECUTOR_EXAMPLES, DSPY_REPLAN_NOTICES
+from prompts.templates import DSPY_PLANNER_NOTICES, DSPY_EXECUTOR_EXAMPLES, DSPY_REPLAN_NOTICES
 from tools.cmd_executor import execute_commands
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ def plan_func(documents):
         return new_status(issue=issue, plan=plan)
     return plan
 
-def execute_func(hub_must_gather_dir, spoke_must_gather_dir):
+def execute_func(hub_must_gather_dir, spoke_must_gather_dir, executor_rules):
     def execute(state):
         print(f"🤖 Executing troubleshooting plan ...")
         issue = state["issue"]
@@ -31,7 +33,7 @@ def execute_func(hub_must_gather_dir, spoke_must_gather_dir):
         exe_plan = dspy.ReAct(Executor, tools=[execute_commands])
         exe_plan_response = exe_plan(
             plan=plan,
-            rules=DSPY_EXECUTOR_RULES,
+            rules=executor_rules,
             examples=DSPY_EXECUTOR_EXAMPLES,
             hub_must_gather_dir=hub_must_gather_dir,
             spoke_must_gather_dir=spoke_must_gather_dir,

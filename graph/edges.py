@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from langgraph.graph import END
 from graph.state import StepExecute
 
