@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from tools.loader import load_runbooks
 from prompts.templates import PLANNER_PROMPT, CONVERTER_PROMPT
 
+
 # log settings
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 LOG_FORMAT = "%(levelname)s: [%(asctime)s, %(module)s, line:%(lineno)d] %(message)s"
@@ -40,13 +41,12 @@ llm_config = {
 #     "config_list": [
 #         {
 #             "model": "qwen2.5:14b",
-#             "api_key": "NotRequired",
-#             "base_url": "http://localhost:11434/v1",
-#             "price": [0, 0],
+#             "client_host": "http://localhost:11434",
+#             "api_type": "ollama",
 #         }
-#     ],
-#     "cache_seed": None,
+#     ]
 # }
+
 
 def user_agent(human_input_mode):
     return autogen.UserProxyAgent(
