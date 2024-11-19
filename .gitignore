@@ -6,3 +6,8 @@
 
 __pycache__
 __workspace__
+_output
+
+build
+dist
+troubleshooter.spec
