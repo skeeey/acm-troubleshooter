@@ -19,5 +19,5 @@ mkdir -p ${ROOT_DIR}/dist/troubleshooter/_internal/litellm/llms/tokenizers
 echo "{}" > ${ROOT_DIR}/dist/troubleshooter/_internal/litellm/llms/tokenizers/anthropic_tokenizer.json
 
 pushd $ROOT_DIR/dist/troubleshooter
-tar -zcf $ROOT_DIR/_output/acm-troubleshooter.tar.gz *
+tar -zcf $ROOT_DIR/_output/acm-troubleshooter-$(uname)-$(uname -m).tar.gz *
 popd
