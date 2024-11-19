@@ -8,13 +8,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def execute_commands(commands: str, need_to_approve=True, timeout=120) -> str:
-    if need_to_approve:
-        approve = input(f"👮 Approve to execute the below commands?\n{commands}\n(y/n) ")
-        if approve.lower() != "y" and approve.lower() != "yes":
-            exit(0)
-    else:
-        print(f"💻 Commands:\n{commands}")
+def execute_commands_func(interactive):
+    if interactive:
+        return execute_commands_with_approve
+    return execute_commands
+
+def execute_commands_with_approve(commands: str, timeout=120) -> str:
+    approve = input(f"👮 Approve to execute the below commands?\n{commands}\n(y/n) ")
+    if approve.lower() != "y" and approve.lower() != "yes":
+        exit(0)
+    return execute_commands(commands, timeout)
+
+def execute_commands(commands: str, timeout=120) -> str:
+    print(f"💻 Commands:\n{commands}")
     
     now = int(time.time())
     work_dir=tempfile.gettempdir()
@@ -48,5 +54,6 @@ def execute_commands(commands: str, need_to_approve=True, timeout=120) -> str:
     
     print(f"Exit Code: {exit_code}\nOutputs:\n{cmd_output}")
     
+    # stop a while to avoid groq api qps limit
     time.sleep(float(5))
     return cmd_output

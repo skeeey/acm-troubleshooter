@@ -39,15 +39,13 @@ def main(runbooks, hub_mg, cluster_mg, executor_rules, interactive, issue):
     if executor_rules is None or not executor_rules.strip():
         executor_rules = DSPY_EXECUTOR_RULES
 
-    if interactive:
-        print("TODO interactive")
-
     documents = load_runbooks(runbooks)
     graph = build_graph(
         documents=documents,
-        hub_must_gather_dir=hub_mg,
-        spoke_must_gather_dir=cluster_mg,
+        hub_mg_dir=hub_mg,
+        spoke_mg_dir=cluster_mg,
         executor_rules=executor_rules,
+        interactive=interactive,
     )
     graph.invoke({"issue": issue}, config={"recursion_limit": 50})
 

@@ -25,7 +25,7 @@ make deps
 #   export LM_MODEL=llama-3.1-70b-versatile
 #   export LM_API_BASE=https://api.groq.com/openai/v1
 #   export LM_API_KEY=<your-groq-api-key>
-# - Using ollama qwen2.5:32b
+# - Using ollama/qwen2.5:32b
 #   export LM_MODEL=ollama/qwen2.5:32b
 #   export LM_API_BASE=http://localhost:11434
 export LM_MODEL=<your-lm-model>

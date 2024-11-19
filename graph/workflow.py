@@ -4,14 +4,15 @@ from langgraph.graph import END, StateGraph, START
 from graph.state import StepExecute
 from graph.nodes import plan_func, execute_func, replan_func
 from graph.edges import should_end
+from tools.cmd_executor import execute_commands_func
 
-def build_graph(documents, hub_must_gather_dir, spoke_must_gather_dir, executor_rules):
+def build_graph(documents, hub_mg_dir, spoke_mg_dir, executor_rules, interactive):
     workflow = StateGraph(StepExecute)
 
     # Nodes
-    workflow.add_node("planer", plan_func(documents))
-    workflow.add_node("execute", execute_func(hub_must_gather_dir, spoke_must_gather_dir, executor_rules))
-    workflow.add_node("replan", replan_func(documents))
+    workflow.add_node("planer", plan_func(documents, interactive))
+    workflow.add_node("execute", execute_func(hub_mg_dir, spoke_mg_dir, executor_rules, execute_commands_func(interactive)))
+    workflow.add_node("replan", replan_func(documents, interactive))
 
     # Edges
     workflow.add_edge(START, "planer")
