@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+import sys
 import subprocess
 import tempfile
 import time
@@ -16,7 +17,7 @@ def execute_commands_func(interactive):
 def execute_commands_with_approve(commands: str, timeout=120) -> str:
     approve = input(f"👮 Approve to execute the below commands?\n{commands}\n(y/n) ")
     if approve.lower() != "y" and approve.lower() != "yes":
-        exit(0)
+        sys.exit(0)
     return execute_commands(commands, timeout)
 
 def execute_commands(commands: str, timeout=120) -> str:

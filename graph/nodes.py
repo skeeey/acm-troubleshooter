@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import sys
 import logging
 import dspy
 from graph.signatures import Planner, Executor, Replan
@@ -25,7 +26,7 @@ def plan_func(documents, interactive):
             continuing = input(f"🚀 Continue?(y/n) ")
             if continuing.lower() != "y" and continuing.lower() != "yes":
                 # TODO human-in-the-loop
-                exit(0)
+                sys.exit(0)
         return new_status(issue=issue, plan=plan)
     return plan
 
@@ -75,6 +76,6 @@ def replan_func(documents, interactive):
             continuing = input(f"🚀 Continue?(y/n) ")
             if continuing.lower() != "y" and continuing.lower() != "yes":
                 # TODO human-in-the-loop
-                exit(0)
+                sys.exit(0)
         return new_status(issue=issue, plan=next_plan)
     return replan
