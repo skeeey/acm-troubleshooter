@@ -5,7 +5,7 @@ import logging
 import dspy
 from graph.signatures import Planner, Executor, Replan
 from graph.state import new_status
-from prompts.templates import DSPY_PLANNER_NOTICES, DSPY_EXECUTOR_EXAMPLES, DSPY_REPLAN_NOTICES
+from prompts.templates import PLANNER_NOTICES, EXECUTOR_EXAMPLES, REPLAN_NOTICES
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ def plan_func(documents, interactive):
         gen_plan = dspy.ChainOfThought(Planner)
         gen_plan_response = gen_plan(
             documents=documents,
-            notices=DSPY_PLANNER_NOTICES,
+            notices=PLANNER_NOTICES,
             issue=issue,
         )
         logger.debug(gen_plan_response)
@@ -39,7 +39,7 @@ def execute_func(hub_mg_dir, spoke_mg_dir, rules, execute_commands):
         exe_plan_response = exe_plan(
             plan=plan,
             rules=rules,
-            examples=DSPY_EXECUTOR_EXAMPLES,
+            examples=EXECUTOR_EXAMPLES,
             hub_must_gather_dir=hub_mg_dir,
             spoke_must_gather_dir=spoke_mg_dir,
         )
@@ -60,7 +60,7 @@ def replan_func(documents, interactive):
         replan_response = replan(
             issue=issue,
             documents=documents,
-            notices=DSPY_REPLAN_NOTICES,
+            notices=REPLAN_NOTICES,
             previous_plan=plan,
             previous_execution_result=result,
         )

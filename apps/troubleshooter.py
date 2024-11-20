@@ -7,7 +7,7 @@ import logging
 from dotenv import load_dotenv
 from graph.workflow import build_graph
 from tools.loader import load_runbooks
-from prompts.templates import DSPY_EXECUTOR_RULES
+from prompts.templates import EXECUTOR_RULES
 
 load_dotenv()
 
@@ -37,7 +37,7 @@ def main(runbooks, hub_mg, cluster_mg, executor_rules, interactive, issue):
         cluster_mg = hub_mg
     
     if executor_rules is None or not executor_rules.strip():
-        executor_rules = DSPY_EXECUTOR_RULES
+        executor_rules = EXECUTOR_RULES
 
     documents = load_runbooks(runbooks)
     graph = build_graph(
