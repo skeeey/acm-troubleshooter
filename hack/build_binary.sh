@@ -26,9 +26,6 @@ pyinstaller --add-data "$litellm_location/litellm/llms/tokenizers/anthropic_toke
     --hidden-import=tiktoken_ext \
     apps/troubleshooter.py
 
-# mkdir -p ${ROOT_DIR}/dist/troubleshooter/_internal/litellm/llms/tokenizers
-# echo "{}" > ${ROOT_DIR}/dist/troubleshooter/_internal/litellm/llms/tokenizers/anthropic_tokenizer.json
-
 pushd $ROOT_DIR/dist/troubleshooter
 tar -zcf $ROOT_DIR/_output/acm-troubleshooter-$(uname)-$(uname -m).tar.gz *
 popd
