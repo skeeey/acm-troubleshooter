@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+import re
 import sys
 import subprocess
 import tempfile
@@ -23,6 +24,8 @@ def execute_commands_with_approve(commands: str, timeout=120) -> str:
 def execute_commands(commands: str, timeout=120) -> str:
     print(f"💻 Commands:\n{commands}")
     
+    check_sanitize_command(commands)
+
     now = int(time.time())
     work_dir=tempfile.gettempdir()
     cmd_file = os.path.join(work_dir, f"acm_troubleshooting_code_{now}.sh")
@@ -58,3 +61,16 @@ def execute_commands(commands: str, timeout=120) -> str:
     # stop a while to avoid groq api qps limit
     time.sleep(float(5))
     return cmd_output
+
+def check_sanitize_command(code: str) -> None:
+    dangerous_patterns = [
+        (r"\brm\s+-rf\b", "Use of 'rm -rf' command is not allowed."),
+        (r"\bmv\b.*?\s+/dev/null", "Moving files to /dev/null is not allowed."),
+        (r"\bdd\b", "Use of 'dd' command is not allowed."),
+        (r">\s*/dev/sd[a-z][1-9]?", "Overwriting disk blocks directly is not allowed."),
+        (r":\(\)\{\s*:\|\:&\s*\};:", "Fork bombs are not allowed."),
+    ]
+    for pattern, message in dangerous_patterns:
+        if re.search(pattern, code):
+            print(f"Potentially dangerous command detected: {message}")
+            sys.exit(1)
