@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from langgraph.graph import END
-from graph.state import StepExecute
+from workflows.diagnosis.state import StepExecute
 
 def should_end(state: StepExecute):
     if state["termination"] is True:

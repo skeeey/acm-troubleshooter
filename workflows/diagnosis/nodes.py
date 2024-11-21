@@ -3,9 +3,9 @@
 import sys
 import logging
 import dspy
-from graph.signatures import Planner, Executor, Replan
-from graph.state import new_status
 from prompts.templates import PLANNER_NOTICES, EXECUTOR_EXAMPLES, REPLAN_NOTICES
+from workflows.diagnosis.signatures import Planner, Executor, Replan
+from workflows.diagnosis.state import new_status
 
 logger = logging.getLogger(__name__)
 

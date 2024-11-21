@@ -5,9 +5,9 @@ import click
 import dspy
 import logging
 from dotenv import load_dotenv
-from graph.workflow import build_graph
 from tools.loader import load_runbooks
 from prompts.templates import EXECUTOR_RULES
+from workflows.diagnosis_workflow import build_graph
 
 load_dotenv()
 

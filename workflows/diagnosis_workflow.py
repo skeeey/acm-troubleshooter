@@ -1,10 +1,10 @@
 # coding: utf-8
 
 from langgraph.graph import END, StateGraph, START
-from graph.state import StepExecute
-from graph.nodes import plan_func, execute_func, replan_func
-from graph.edges import should_end
 from tools.cmd_executor import execute_commands_func
+from workflows.diagnosis.state import StepExecute
+from workflows.diagnosis.nodes import plan_func, execute_func, replan_func
+from workflows.diagnosis.edges import should_end
 
 def build_graph(documents, hub_mg_dir, spoke_mg_dir, executor_rules, interactive):
     workflow = StateGraph(StepExecute)
