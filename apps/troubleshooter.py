@@ -5,8 +5,8 @@ import click
 import dspy
 import logging
 from dotenv import load_dotenv
-from tools.loader import load_runbooks
 from prompts.templates import EXECUTOR_RULES
+from tools.loaders.markdown import load_runbooks_as_str
 from workflows.diagnosis_workflow import build_graph
 
 load_dotenv()
@@ -39,7 +39,7 @@ def main(runbooks, hub_mg, cluster_mg, executor_rules, interactive, issue):
     if executor_rules is None or not executor_rules.strip():
         executor_rules = EXECUTOR_RULES
 
-    documents = load_runbooks(runbooks)
+    documents = load_runbooks_as_str(runbooks)
     graph = build_graph(
         documents=documents,
         hub_mg_dir=hub_mg,
