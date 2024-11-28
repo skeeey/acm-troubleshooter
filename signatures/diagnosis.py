@@ -32,7 +32,7 @@ class Replan(dspy.Signature):
     documents: list[str] = dspy.InputField(desc="The relevant documents.")
     notices: str = dspy.InputField(desc="Notices for generating the new plan.")
     previous_plan: str = dspy.InputField(desc="The previous plan.")
-    previous_execution_results: list[str] = dspy.InputField(desc="The previous execution results.")
+    previous_execution_results: str = dspy.InputField(desc="The previous execution results.")
     
     new_plan: str = dspy.OutputField()
     hub_commands: list[str] = dspy.OutputField(desc="Optional, the executable commands that are run on the hub.")

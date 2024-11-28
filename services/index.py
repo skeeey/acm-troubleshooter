@@ -8,6 +8,7 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import Document
 from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
 from llama_index.vector_stores.postgres import PGVectorStore
+from sqlalchemy import make_url
 from pydantic import BaseModel
 from tools.loaders.markdown import load_product_docs, load_runbooks
 
@@ -19,13 +20,14 @@ class RunbookInfo(BaseModel):
     hash: str
 
 class RAGService:
-    def __init__(self, db_host, db_pw, embed_dim, db_name="acm", db_port=5432, db_user="acm", db_table="acm_docs"):
+    def __init__(self, db_url: str, embed_dim: int, db_table="acm_docs"):
+        url = make_url(db_url)
         self.vector_store = PGVectorStore.from_params(
-            database=db_name,
-            host=db_host,
-            port=db_port,
-            user=db_user,
-            password=db_pw,
+            database=url.database,
+            host=url.host,
+            port=url.port,
+            user=url.username,
+            password=url.password,
             table_name=db_table,
             embed_dim=embed_dim,
             # HNSW (Hierarchical Navigable Small World)

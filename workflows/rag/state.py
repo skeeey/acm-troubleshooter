@@ -6,7 +6,7 @@ class GraphState(TypedDict):
     issue: str
     
     plan: str
-    results: list[str]
+    results: str
 
     relevant_docs: list[str]
 
@@ -28,7 +28,7 @@ def new_state(state: GraphState) -> GraphState:
         retrieval_times=state["retrieval_times"]
     )
 
-def init_state(issue: str, plan="", results=[]) -> GraphState:
+def init_state(issue: str, plan="", results="") -> GraphState:
     return GraphState(
         issue=issue,
         plan=plan,
