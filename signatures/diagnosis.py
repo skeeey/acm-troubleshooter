@@ -37,4 +37,3 @@ class Replan(dspy.Signature):
     new_plan: str = dspy.OutputField()
     hub_commands: list[str] = dspy.OutputField(desc="Optional, the executable commands that are run on the hub.")
     spoke_commands: list[str] = dspy.OutputField(desc="Optional, the executable commands that are run on the spoke.")
-

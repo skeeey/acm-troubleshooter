@@ -5,7 +5,6 @@ import dspy
 from signatures.diagnosis import Planner, Query, Replan
 from prompts.templates import PLANNER_NOTICES
 from services.index import RAGService
-from tools.loaders.markdown import get_markdown_title
 from workflows.rag.state import new_state
 
 logger = logging.getLogger(__name__)
@@ -39,11 +38,12 @@ def retrieve_func(rag_svc: RAGService):
     def retrieve(state):
         current_state = new_state(state)
         query = current_state["issue"]
+        sources = current_state["sources"]
         retrieval_times = current_state["retrieval_times"]
 
+        relevant_nodes = rag_svc.retrieve(query=query, sources=sources)
         relevant_docs = []
-        for node in rag_svc.retrieve(query=query).source_nodes:
-            logger.info("retrieved docs: [%.3f] %s" % (node.score, get_markdown_title(node.text)))
+        for node in relevant_nodes:
             relevant_docs.append(node.text)
 
         current_state["relevant_docs"] = relevant_docs

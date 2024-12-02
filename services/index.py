@@ -5,22 +5,22 @@ import time
 from llama_index.core import VectorStoreIndex
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, NodeWithScore
 from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
 from llama_index.vector_stores.postgres import PGVectorStore
-from sqlalchemy import make_url
 from pydantic import BaseModel
-from tools.loaders.markdown import load_product_docs, load_runbooks
+from sqlalchemy import make_url
+from tools.loaders.markdown import get_markdown_title
 
 logger = logging.getLogger(__name__)
 
-class RunbookInfo(BaseModel):
+class DocInfo(BaseModel):
     id: str
     name: str
     hash: str
 
 class RAGService:
-    def __init__(self, db_url: str, embed_dim: int, db_table="acm_docs"):
+    def __init__(self, db_url: str, embed_dim: int, db_table="vector_docs"):
         url = make_url(db_url)
         self.vector_store = PGVectorStore.from_params(
             database=url.database,
@@ -50,98 +50,94 @@ class RAGService:
         )
         self.index = VectorStoreIndex.from_vector_store(vector_store=self.vector_store)
     
-    def index_docs(self, product_docs_dir: str, runbooks_dir: str):
-        docs = []
-        if product_docs_dir is not None:
-            logger.info("loading product docs from %s", product_docs_dir)
-            docs.extend(load_product_docs(product_docs_dir))
-        
-        if runbooks_dir is not None:
-            logger.info("loading runbooks from %s", runbooks_dir)
-            docs.extend(load_runbooks(runbooks_dir))
-
+    def index_docs(self, docs: list[Document]):
         if len(docs) == 0:
             raise ValueError("there is no product docs or runbooks")
 
-        logger.info("index docs (total=%d) to database ...", len(docs))
         start_time = time.time()
         for doc in docs:
             self.index.insert(doc)
-        logger.info("docs indexed, time used %.3fs", (time.time() - start_time))
+        logger.info("docs (total=%d) are indexed, time used %.3fs", len(docs), (time.time() - start_time))
     
-    def refresh_runbooks(self, runbooks: list[Document], version="2.12"):
-        runbook_infos = self.list_runbooks(version)
-        for runbook in runbooks:
-            existing, runbook_info = self.runbook_exists(runbook_infos, runbook.doc_id)
+    def refresh_docs(self, docs: list[Document], source: str):
+        doc_infos = self.list_docs(source)
+        for doc in docs:
+            existing, doc_info = self.doc_exists(doc_infos, doc.doc_id)
             if existing:
-                if runbook.metadata["hash"] == runbook_info.hash:
-                    logger.info("runbook '%s' not changed", runbook.metadata["name"])
+                if doc.metadata["hash"] == doc_info.hash:
+                    logger.info("runbook '%s' not changed", doc.metadata["name"])
                     continue
                 
-                logger.info("update runbook '%s'", runbook.metadata["name"])
-                self.index.update_ref_doc(runbook)
+                logger.info("update runbook '%s'", doc.metadata["name"])
+                self.index.update_ref_doc(doc)
                 continue
             
-            self.index.insert(runbook)
-            logger.info("insert new runbook '%s'", runbook.metadata["name"])
+            self.index.insert(doc)
+            logger.info("insert new runbook '%s'", doc.metadata["name"])
 
-    def delete_runbooks(self, doc_id: str):
-        self.index.delete_ref_doc(doc_id, delete_from_docstore=True)
+    def delete_docs(self, source: str):
+        doc_infos = self.list_docs(source)
+        for doc_info in doc_infos:
+            start_time = time.time()
+            self.index.delete_ref_doc(doc_info.id, delete_from_docstore=True)
+            logger.info("doc (%s) was deleted, time used %.3fs", doc_info.name, (time.time() - start_time))
 
-    def list_runbooks(self, version="2.12") -> list[RunbookInfo]:
-        logger.info("list runbooks ...")
+    def list_docs(self, source: str) -> list[DocInfo]:
         start_time = time.time()
         nodes = self.vector_store.get_nodes(filters=MetadataFilters(
             filters=[
-                MetadataFilter(key="version", value=version),
-                MetadataFilter(key="kind", value="runbooks"),
+                MetadataFilter(key="source", value=source),
             ],
             condition="and",
         ))
-        logger.info("runbooks listed, time used %.3fs", (time.time() - start_time))
+        logger.info("docs (source=%s, total=%d) listed, time used %.3fs", source, len(nodes), (time.time() - start_time))
 
-        runbooks = []
+        docs = []
         for node in nodes:
             doc_id = node.extra_info["id"]
-            existing, _ = self.runbook_exists(runbooks, doc_id)
+            existing, _ = self.doc_exists(docs, doc_id)
             if existing:
                 continue
             doc_name = node.extra_info["name"]
             doc_hash = node.extra_info["hash"]
-            runbooks.append(RunbookInfo(id=doc_id, name=doc_name, hash=doc_hash))
-        return runbooks
+            docs.append(DocInfo(id=doc_id, name=doc_name, hash=doc_hash))
+        return docs
 
-    def retrieve(self, query: str, version="2.12", similarity_cutoff=0.7, kinds=None):
+    def retrieve(self, query: str, sources: list[str]=None,
+                 minimum_similarity_cutoff=0.6, similarity_top_k=10, hnsw_ef_search=300) -> list[NodeWithScore]:
+        if sources is None:
+            raise ValueError("sources are required")
+        
         metadata_filters = MetadataFilters(
             filters=[
-                MetadataFilter(key="version", value=version),
+                MetadataFilter(key="source", value=sources, operator="in"),
             ],
             condition="and",
         )
 
-        if kinds is not None:
-            metadata_filters.filters.append(
-                MetadataFilter(key="kind", value=kinds, operator="in")
-            )
-
         retriever = self.index.as_retriever(
-            similarity_top_k=10,
-            vector_store_kwargs={"hnsw_ef_search": 300},
+            similarity_top_k=similarity_top_k,
+            vector_store_kwargs={"hnsw_ef_search": hnsw_ef_search},
             filters=metadata_filters,
         )
         query_engine = RetrieverQueryEngine(
             retriever=retriever,
-            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=similarity_cutoff)]
+            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=minimum_similarity_cutoff)]
         )
 
-        logger.info("retrieve docs for '%s' ...", query)
+        # TODO if the length of source nodes is 0, reduce the similarity_cutoff to retrieve
         start_time = time.time()
         response = query_engine.query(query)
-        logger.info("docs retrieved, time used %.3fs", (time.time() - start_time))
-        return response
+        logger.info("docs retrieved (total=%d, query=%s, sources=%s), time used %.3fs",
+                    len(response.source_nodes), query, sources, (time.time() - start_time))
+        nodes = []
+        for node in response.source_nodes:
+            logger.info(" doc: [%.3f] %s" % (node.score, get_markdown_title(node.text)))
+            nodes.append(node)
+        return nodes
 
-    def runbook_exists(self, runbooks: list[RunbookInfo], doc_id: str):
-        for runbook in runbooks:
-            if runbook.id == doc_id:
-                return True, runbook
+    def doc_exists(self, docs: list[DocInfo], doc_id: str):
+        for doc in docs:
+            if doc.id == doc_id:
+                return True, doc
         return False, None

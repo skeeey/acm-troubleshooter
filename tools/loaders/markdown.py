@@ -8,20 +8,18 @@ from llama_index.readers.file import MarkdownReader
 from llama_index.core.schema import Document
 
 def load_runbooks_as_str(dir: str, exclude_list=None) -> str:
-    docs = load_runbooks(path=dir, exclude_list=exclude_list)
+    docs = load_runbooks(dir=dir, exclude_list=exclude_list)
     contents = []
     for doc in docs:
         contents.append(doc.text)
     
     return "Runbook: " + "\nRunbook: ".join(contents)
 
-def load_runbooks(path: str, version="2.12", exclude_list=None) -> list[Document]:
+def load_runbooks(dir: str, source: str, exclude_list=None) -> list[Document]:
     if exclude_list is None:
         exclude_list = ["README.md", "SECURITY.md", "GUIDELINE.md", "index.md"]
     
-    files = [path]
-    if os.path.isdir(path):
-        files = list_files(path, exclude_list, ".md")
+    files = list_files(dir, exclude_list, ".md")
     
     docs = []
     for md_file in files:
@@ -33,34 +31,17 @@ def load_runbooks(path: str, version="2.12", exclude_list=None) -> list[Document
         if doc_name is None:
             raise ValueError(f"title is required for {doc.metadata.filename}")
         
-        doc_id = hashlib.md5(f"{doc_name}.{version}".encode()).hexdigest()
+        doc_id = hashlib.md5(f"{doc_name}.{source}".encode()).hexdigest()
         doc_hash = hashlib.md5(doc.text.encode()).hexdigest()
-        # override the metadata
+        # override the doc_id
         doc.doc_id = doc_id
+        # override the metadata
         doc.metadata = {
             "id": doc_id,
-            "hash": doc_hash,
             "name": doc_name,
-            "kind": "runbooks",
-            "version": version,
+            "hash": doc_hash,
+            "source": source,
         }
-    return docs
-
-def load_product_docs(dir: str, version="2.12", exclude_list=None) -> list[Document]:
-    if exclude_list is None:
-        exclude_list = []
-    
-    files = list_files(dir, exclude_list, ".md")
-
-    docs = []
-    for md_file in files:
-        # MarkdownReader splits the markdown with headers, therefore one doc may be splitted by multi-parts
-        # TODO find a way to give a fixed id for each doc
-        docs.extend(MarkdownReader().load_data(Path(md_file)))
-
-    for doc in docs:
-        doc.metadata["kind"]="product_docs"
-        doc.metadata["version"]=version
     return docs
 
 def list_files(start_path, exclude_list, suffix):
@@ -82,10 +63,3 @@ def get_markdown_title(content):
             title = stripped_line.lstrip('#').strip()
             return title
     return None
-
-if __name__ == "__main__":
-    # docs = load_product_docs("/Users/wliu1/Downloads/acm-2_12-doc")
-    docs = load_runbooks(path="/Users/wliu1/Workspace/foundation-docs")
-    print(len(docs))
-    for doc in docs:
-        print(doc.metadata)

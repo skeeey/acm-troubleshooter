@@ -56,3 +56,37 @@ For a runbook, it should
 - https://github.com/langchain-ai/langgraph
 - https://github.com/gmeghnag/omc
 - https://langchain-ai.github.io/langgraph/tutorials/plan-and-execute/plan-and-execute/
+
+## TODO
+
+```sh
+api_host="127.0.0.1:8000"
+
+# add a runbook repo and index the runbooks
+resp=$(curl -s -X PUT --header "Content-Type: application/json" \
+    $api_host/runbooksets \
+    -d '{"repo": "https://github.com/skeeey/foundation-docs.git", "branch": "test"}')
+echo $resp
+
+# runbook_set_id=$(echo $resp | jq -r '.id')
+# echo $runbook_set_id
+runbook_set_id="53dd9a8d-a331-4d64-9eb8-327da2f3ef55"
+
+# list runbook repos
+resp=$(curl -s -X GET $api_host/runbooksets)
+echo $resp
+
+# get a runbook repo with its indexed version 
+resp=$(curl -s -X GET $api_host/runbooksets/${runbook_set_id})
+echo $resp
+
+# exit
+
+# update a runbook repo
+resp=$(curl -s -X POST $api_host/runbooksets/${runbook_set_id})
+echo $resp
+
+# delete a runbook repo
+resp=$(curl -s -X DELETE $api_host/runbooksets/${runbook_set_id})
+echo $resp
+```

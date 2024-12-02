@@ -40,9 +40,9 @@ JINA = EmbeddingModel(
 )
 
 BGE = EmbeddingModel(
-    name="BAAI/bge-base-en-v1.5",
-    dims=768,
-    max_seq_len=512,
-    chunk_size=460,
+    name="BAAI/bge-m3",
+    dims=1024,
+    max_seq_len=8192,
+    chunk_size=1024,
     trust_remote_code=False,
 )

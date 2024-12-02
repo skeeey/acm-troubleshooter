@@ -3,21 +3,19 @@
 from typing_extensions import TypedDict
 
 class GraphState(TypedDict):
+    sources: list[str]
     issue: str
-    
     plan: str
     results: str
-
     relevant_docs: list[str]
-
     reasoning: str
     hub_commands: list[str]
     spoke_commands: list[str]
-    
     retrieval_times: int
 
 def new_state(state: GraphState) -> GraphState:
     return GraphState(
+        sources=state["sources"],
         issue=state["issue"],
         plan=state["plan"],
         results=state["results"],
@@ -28,8 +26,9 @@ def new_state(state: GraphState) -> GraphState:
         retrieval_times=state["retrieval_times"]
     )
 
-def init_state(issue: str, plan="", results="") -> GraphState:
+def init_state(issue: str, sources: list[str], plan="", results="") -> GraphState:
     return GraphState(
+        sources=sources,
         issue=issue,
         plan=plan,
         results=results,
