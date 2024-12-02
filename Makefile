@@ -11,3 +11,8 @@ binary:
 .PHONY: run
 run:
 	hack/run_server.sh
+
+
+.PHONY: service
+service:
+	streamlit run ui/app.py

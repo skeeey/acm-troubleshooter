@@ -15,7 +15,7 @@ source $VENV/bin/activate
 make deps
 ```
 
-3. Instal [`omc` command](https://github.com/gmeghnag/omc)
+3. Install [`omc` command](https://github.com/gmeghnag/omc)
 
 ## Diagnose an ACM issue with runbooks and must-gather
 
@@ -36,6 +36,12 @@ python -m apps.troubleshooter --runbooks=<your-runbooks-dir> \
     --hub-mg=<your-hub-must-gather-dir> \
     --cluster-mg=<your-managed-cluster-must-gather-dir> \
     <your-issue>
+```
+
+4. Run the service with web UI
+
+```bash
+make service
 ```
 
 ## Runbook Guideline
