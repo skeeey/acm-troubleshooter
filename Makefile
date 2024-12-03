@@ -14,4 +14,4 @@ run-server:
 
 .PHONY: run-streamlit
 run-streamlit:
-	streamlit run ui/app.py
+	hack/run_streamlit.sh

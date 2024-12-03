@@ -13,4 +13,4 @@ date_suffix=$(date +"%Y%m%d%H%M%S")
 server_pid=$!
 echo "$server_pid" > ${output_dir}/"server_pid.${date_suffix}"
 echo "server ($server_pid) is running ..."
-echo "log is located at ${log_dir}/server.${date_suffix}.log"
+echo "${log_dir}/server.${date_suffix}.log"
