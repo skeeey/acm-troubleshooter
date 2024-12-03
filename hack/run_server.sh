@@ -7,7 +7,7 @@ log_dir=${output_dir}/logs
 
 mkdir -p ${log_dir}
 
-date_suffix=$(date +"%Y-%m-%dT%H:%M.%S")
+date_suffix=$(date +"%Y%m%d%H%M%S")
 
 (exec uvicorn server.main:app --host 0.0.0.0 --port 8000) &> ${log_dir}/server.${date_suffix}.log &
 server_pid=$!

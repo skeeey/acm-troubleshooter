@@ -8,11 +8,10 @@ deps:
 binary:
 	hack/build_binary.sh
 
-.PHONY: run
-run:
+.PHONY: run-server
+run-server:
 	hack/run_server.sh
 
-
-.PHONY: service
-service:
+.PHONY: run-streamlit
+run-streamlit:
 	streamlit run ui/app.py
