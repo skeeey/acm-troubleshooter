@@ -158,7 +158,7 @@ async def evaluate_issue(issue_id: str, step_id: str, req: Request):
     if last_step is None:
         raise HTTPException(status_code=404, detail="the step not found")
 
-    storage_svc.evaluate_issue(uuid.UUID(issue_id), uuid.UUID(step_id), req.score)
+    storage_svc.evaluate_issue(uuid.UUID(issue_id), uuid.UUID(step_id), req.score, req.results)
 
 
 @app.get("/runbooksets")
