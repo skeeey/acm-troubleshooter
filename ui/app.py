@@ -19,52 +19,72 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(page_icon="💬", layout="wide", page_title="ACM")
 
+st.markdown(
+    """
+  <style>
+      .reportview-container {
+          margin-top: -2em;
+      }
+      #MainMenu {visibility: hidden;}
+      .stAppDeployButton {display:none;}
+      footer {visibility: hidden;}
+      #stDecoration {display:none;}
+  </style>
+""",
+    unsafe_allow_html=True,
+)
 
-def hidden_default_menu():
-    st.markdown(
-        """
-      <style>
-          .reportview-container {
-              margin-top: -2em;
-          }
-          #MainMenu {visibility: hidden;}
-          .stAppDeployButton {display:none;}
-          footer {visibility: hidden;}
-          #stDecoration {display:none;}
-      </style>
-  """,
-        unsafe_allow_html=True,
-    )
+st.header(
+    "Red Hat Advanced Cluster Management for Kubernetes",
+    divider="rainbow",
+    anchor=False,
+)
+
+# st.subheader(
+#     "Red Hat Advanced Cluster Management for Kubernetes",
+#     divider="rainbow",
+#     anchor=False,
+# )
 
 
-def history_message():
-    st.header(
-        "Red Hat Advanced Cluster Management for Kubernetes",
-        divider="rainbow",
-        anchor=False,
-    )
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    # st.subheader(
-    #     "Red Hat Advanced Cluster Management for Kubernetes",
-    #     divider="rainbow",
-    #     anchor=False,
-    # )
+logging.info("the cached message size = %d", len(st.session_state.messages))
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    avatar = "🤖" if message["role"] == "assistant" else "👨‍💻"
+    with st.chat_message(message["role"], avatar=avatar):
+        if isinstance(message["content"], Response):
+            full_response = message["content"]
+            st.markdown("##### Reasoning")
+            st.markdown(full_response.reasoning)
+            st.markdown("##### Plan")
+            st.markdown(full_response.plan)
+            hub_command = False
+            spoke_command = False
+            if (
+                full_response.hub_commands is not None
+                and len(full_response.hub_commands) > 0
+            ):
+                hub_command = True
+            if (
+                full_response.spoke_commands is not None
+                and len(full_response.spoke_commands) > 0
+            ):
+                spoke_command = True
 
-    logging.info("the cached message size = %d", len(st.session_state.messages))
-
-    # Display chat messages from history on app rerun
-    for message in st.session_state.messages:
-        avatar = "🤖" if message["role"] == "assistant" else "👨‍💻"
-        with st.chat_message(message["role"], avatar=avatar):
-            if isinstance(message["content"], Response):
-                st.markdown(message["content"].plan)
-                st.markdown(message["content"].reasoning)
-            else:
-                st.markdown(message["content"])
-            # st.markdown()
+            if hub_command or spoke_command:
+                st.markdown("##### Commands ")
+            if hub_command:
+                st.markdown("- hub cluster")
+                st.code("\n".join(full_response.hub_commands), language="shell")
+            if spoke_command:
+                st.markdown("- spoke cluster")
+                st.code("\n".join(full_response.spoke_commands), language="shell")
+        else:
+            st.markdown(message["content"])
 
 
 def interact():
@@ -74,15 +94,15 @@ def interact():
             st.session_state.clear()
             return
 
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
         with st.chat_message("user", avatar="👨‍💻"):
             st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
         try:
             # Use the generator function with st.write_stream
             with st.chat_message("assistant", avatar="🤖"):
-                with st.spinner():
+
+                with st.spinner("Processing"):
                     step_type = "create"
                     if (
                         "issue_id" in st.session_state
@@ -99,28 +119,57 @@ def interact():
                     else:
                         full_response = create_issue(Request(issue=prompt))
 
-                logger.info(
-                    "the %s issue response: %s - %s",
-                    step_type,
-                    full_response.issue_id,
-                    full_response.step_id,
-                )
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": full_response}
-                )
+                    logger.info(
+                        "the %s issue response: %s - %s",
+                        step_type,
+                        full_response.issue_id,
+                        full_response.step_id,
+                    )
+
+                # import rich
+                # rich.print(full_response)
                 if isinstance(full_response, Response):
-                    st.markdown(full_response.plan)
+                    st.markdown("##### Reasoning")
                     st.markdown(full_response.reasoning)
+                    st.markdown("##### Plan")
+                    st.markdown(full_response.plan)
+                    hub_command = False
+                    spoke_command = False
+                    if (
+                        full_response.hub_commands is not None
+                        and len(full_response.hub_commands) > 0
+                    ):
+                        hub_command = True
+                    if (
+                        full_response.spoke_commands is not None
+                        and len(full_response.spoke_commands) > 0
+                    ):
+                        spoke_command = True
+
+                    if hub_command == True or spoke_command == True:
+                        st.markdown("##### Commands ")
+
+                    if hub_command == True:
+                        st.markdown("- hub cluster")
+                        st.code("\n".join(full_response.hub_commands), language="shell")
+                    if spoke_command == True:
+                        st.markdown("- spoke cluster")
+                        st.code(
+                            "\n".join(full_response.spoke_commands), language="shell"
+                        )
+                    # st.markdown(full_response.plan)
+                    # st.markdown(full_response.reasoning)
                     st.session_state.issue_id = full_response.issue_id
                     st.session_state.last_step_id = full_response.step_id
                 else:
                     logging.info("the assistant should response a Response type")
                     st.write(full_response)
 
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": full_response}
+                )
         except Exception as e:
             st.error(e, icon="🚨")
 
 
-hidden_default_menu()
-history_message()
 interact()
