@@ -83,6 +83,10 @@ class StorageService:
         with Session(self.engine) as session:
             return session.get(Issue, id)
     
+    def list_issue(self) -> list[Issue]:
+        with Session(self.engine) as session:
+            return session.exec(statement=select(Issue), execution_options={"prebuffer_rows": True})
+    
     def create_diagnosis_step(self, issue_id: uuid.UUID) -> Diagnosis:
         step = Diagnosis(issue_id=issue_id)
         with Session(self.engine) as session:
@@ -124,7 +128,7 @@ class StorageService:
         with Session(self.engine) as session:
             return session.get(RunbookSet, id)
     
-    def list_runbook_set(self) -> RunbookSet:
+    def list_runbook_set(self) -> list[RunbookSet]:
         with Session(self.engine) as session:
             return session.exec(statement=select(RunbookSet), execution_options={"prebuffer_rows": True})
     

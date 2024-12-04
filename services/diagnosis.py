@@ -3,8 +3,8 @@
 import dspy
 import logging
 from server.models import LLMConfig, RetrievalConfig
-from workflows.rag_workflow import build_graph
-from workflows.rag.state import init_state
+from workflows.diagnosis_graph import build_graph
+from workflows.diagnosis.state import init_state
 
 logger = logging.getLogger(__name__)
 
@@ -21,5 +21,5 @@ class DiagnosisService:
             issue=issue,
             sources=rcfg.doc_sources,
             plan=plan,
-            results=results)
+            user_inputs=results)
         return self.graph.invoke(state, config={"recursion_limit": recursion_limit})

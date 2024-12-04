@@ -2,9 +2,9 @@
 
 from langgraph.graph import END, StateGraph, START
 from services.index import RAGService
-from workflows.rag.state import GraphState
-from workflows.rag.nodes import transform_func, retrieve_func, generate_func
-from workflows.rag.edges import grade_documents
+from workflows.diagnosis.state import GraphState
+from workflows.diagnosis.nodes import transform_func, retrieve_func, generate_func
+from workflows.diagnosis.edges import grade_documents
 
 def build_graph(rag_svc: RAGService):
     workflow = StateGraph(GraphState)
@@ -22,7 +22,7 @@ def build_graph(rag_svc: RAGService):
         {
             "useful": "generate",
             "useless": "transform",
-            "limit exceed": END,
+            "terminated": END,
         },
     )
     workflow.add_edge("generate", END)

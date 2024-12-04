@@ -104,7 +104,7 @@ class RAGService:
         return docs
 
     def retrieve(self, query: str, sources: list[str]=None,
-                 minimum_similarity_cutoff=0.6, similarity_top_k=10, hnsw_ef_search=300) -> list[NodeWithScore]:
+                 minimum_similarity_cutoff=0.65, similarity_top_k=10, hnsw_ef_search=300) -> list[NodeWithScore]:
         if sources is None:
             raise ValueError("sources are required")
         
@@ -132,7 +132,7 @@ class RAGService:
                     len(response.source_nodes), query, sources, (time.time() - start_time))
         nodes = []
         for node in response.source_nodes:
-            logger.info(" doc: [%.3f] %s" % (node.score, get_markdown_title(node.text)))
+            logger.info("-- doc: [%.3f] %s" % (node.score, get_markdown_title(node.text)))
             nodes.append(node)
         return nodes
 

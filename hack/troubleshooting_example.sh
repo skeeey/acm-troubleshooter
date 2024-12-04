@@ -8,28 +8,28 @@ resp=$(curl -s -X PUT --header "Content-Type: application/json" \
     -d '{"issue": "my cluster local-cluster is unknown"}')
 echo $resp
 
-issue_id=$(echo $resp | jq -r '.issue_id')
-last_step_id=$(echo $resp | jq -r '.step_id')
+# issue_id=$(echo $resp | jq -r '.issue_id')
+# last_step_id=$(echo $resp | jq -r '.step_id')
 
-# (optional) evaluate the troubleshooting step
-resp=$(curl -s -X PUT --header "Content-Type: application/json" \
-    $api_host/issues/${issue_id}/evaluation/${last_step_id} \
-    -d '{"score": 1}')
-echo $resp
+# # (optional) evaluate the troubleshooting step
+# resp=$(curl -s -X PUT --header "Content-Type: application/json" \
+#     $api_host/issues/${issue_id}/evaluation/${last_step_id} \
+#     -d '{"score": 1}')
+# echo $resp
 
-# continue to troubleshoot the issue
-resp=$(curl -s -X POST --header "Content-Type: application/json" \
-    $api_host/issues/$issue_id \
-    -d '{"last_step_id": "'$last_step_id'", "results": "the ManagedClusterConditionAvailable is Unknown; the ManagedClusterImportSucceeded is True"}')
-echo $resp
+# # continue to troubleshoot the issue
+# resp=$(curl -s -X POST --header "Content-Type: application/json" \
+#     $api_host/issues/$issue_id \
+#     -d '{"last_step_id": "'$last_step_id'", "results": "the ManagedClusterConditionAvailable is Unknown; the ManagedClusterImportSucceeded is True"}')
+# echo $resp
 
-issue_id=$(echo $resp | jq -r '.issue_id')
-last_step_id=$(echo $resp | jq -r '.step_id')
+# issue_id=$(echo $resp | jq -r '.issue_id')
+# last_step_id=$(echo $resp | jq -r '.step_id')
 
-# (optional) evaluate the troubleshooting step
-resp=$(curl -s -X PUT --header "Content-Type: application/json" \
-    $api_host/issues/${issue_id}/evaluation/${last_step_id} \
-    -d '{"score": -1}')
-echo $resp
+# # (optional) evaluate the troubleshooting step
+# resp=$(curl -s -X PUT --header "Content-Type: application/json" \
+#     $api_host/issues/${issue_id}/evaluation/${last_step_id} \
+#     -d '{"score": -1}')
+# echo $resp
 
 # continue ...

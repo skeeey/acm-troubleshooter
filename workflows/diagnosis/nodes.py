@@ -5,7 +5,7 @@ import dspy
 from signatures.diagnosis import Planner, Query, Replan
 from prompts.templates import PLANNER_NOTICES
 from services.index import RAGService
-from workflows.rag.state import new_state
+from workflows.diagnosis.state import new_state
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ def transform_func():
         current_state = new_state(state)
         issue = current_state["issue"]
         plan = current_state["plan"]
-        results = current_state["results"]
+        results = current_state["user_inputs"]
 
         logger.info("generate a rag query for the issue: %s", issue)
         if len(plan) == 0:
@@ -42,6 +42,13 @@ def retrieve_func(rag_svc: RAGService):
         retrieval_times = current_state["retrieval_times"]
 
         relevant_nodes = rag_svc.retrieve(query=query, sources=sources)
+        if len(relevant_nodes) == 0:
+            logger.warning("no relevant nodes retrieved")
+            current_state["terminated"] = True
+            current_state["plan"] = ""
+            current_state["reasoning"] = "No similar docs are found."
+            return current_state
+        
         relevant_docs = []
         for node in relevant_nodes:
             relevant_docs.append(node.text)
@@ -57,7 +64,7 @@ def generate_func():
         current_state = new_state(state)
         issue = current_state["issue"]
         plan = current_state["plan"]
-        results = current_state["results"]
+        results = current_state["user_inputs"]
         documents = current_state["relevant_docs"]
         
         if len(plan) == 0:

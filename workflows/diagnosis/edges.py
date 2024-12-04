@@ -11,10 +11,14 @@ def distribute_issue(state):
     return "transform"
 
 def grade_documents(state):
+    terminated = state["terminated"]
+    if terminated:
+        return "terminated"
+    
     retrieval_times = state["retrieval_times"]
     if retrieval_times > retrieval_limit:
         logger.warning("retrieval limit reached for the issue: %s", state["issue"])
-        return "limit exceed"
+        return "terminated"
 
     # TODO evaluate the retrieved result 
     # score = state["score"]
