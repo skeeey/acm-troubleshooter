@@ -65,22 +65,17 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost",
-        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1",
+        "http://127.0.0.1:8000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# endpoints
-@app.get("/")
-async def root():
-    return "ACM Troubleshooter Services"
-
-
 @app.put("/issues")
-def create_issue(req: Request):
+async def create_issue(req: Request):
     if is_empty(req.issue):
         raise HTTPException(status_code=422, detail="the issue is required")
 
@@ -114,7 +109,7 @@ def create_issue(req: Request):
 
 
 @app.post("/issues/{issue_id}")
-def diagnose_issue(issue_id: str, req: Request):
+async def diagnose_issue(issue_id: str, req: Request):
     if is_empty(req.last_step_id):
         raise HTTPException(status_code=422, detail="the last_step_id is required")
 
@@ -170,7 +165,6 @@ async def list_runbook_sets():
         )
     return rs_list
 
-
 @app.get("/runbooksets/{id}")
 async def get_runbook_set(id: str):
     rs = storage_svc.get_runbook_set(uuid.UUID(id))
@@ -188,18 +182,42 @@ async def get_runbook_set(id: str):
 
 
 @app.put("/runbooksets")
-async def create_runbook_set(req: RunBookSetRequest, bg_tasks: BackgroundTasks):
-    rs = storage_svc.find_runbook_set(repo=req.repo, branch=req.branch)
-    if rs is not None:
-        raise HTTPException(status_code=409, detail="the runbook set already exists")
-
+async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: BackgroundTasks):
     dist = f"{parse_repo(req.repo)}-{req.branch}"
     repo_dir = os.path.join(cwd, dist)
 
+    rs = storage_svc.find_runbook_set(repo=req.repo, branch=req.branch)
+    if rs is not None:
+        if not os.path.exists(repo_dir):
+            raise HTTPException(
+                status_code=500, detail="the runbook set repo dir not found"
+            )
+        
+        # update the repo
+        pull_result = pull(cwd=repo_dir)
+        if pull_result.return_code != 0:
+            raise HTTPException(status_code=500, detail=pull_result.stderr)
+
+        # fetch the head commit
+        fetch_result = fetch_head_commit(cwd=repo_dir)
+        if fetch_result.return_code != 0:
+            raise HTTPException(status_code=500, detail=fetch_result.stderr)
+        
+        version = fetch_result.stdout
+        rsv = storage_svc.find_runbook_set_version(version=version)
+        if rsv is not None:
+            # TODO if rsv status is failed, try to reindex 
+            return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
+        
+        bg_tasks.add_task(index, rs.id, repo_dir, version, rag_svc, storage_svc)
+        return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
+
+    # clone the repo
     clone_result = clone(repo=req.repo, cwd=cwd, dist=dist, branch=req.branch)
     if clone_result.return_code != 0:
         raise HTTPException(status_code=500, detail=clone_result.stderr)
 
+    # fetch the head commit
     fetch_result = fetch_head_commit(cwd=repo_dir)
     if fetch_result.return_code != 0:
         raise HTTPException(status_code=500, detail=fetch_result.stderr)
@@ -210,37 +228,6 @@ async def create_runbook_set(req: RunBookSetRequest, bg_tasks: BackgroundTasks):
 
     bg_tasks.add_task(index, new_rs.id, repo_dir, version, rag_svc, storage_svc)
     return RedirectResponse(status_code=303, url=f"/runbooksets/{str(new_rs.id)}")
-
-
-@app.post("/runbooksets/{id}")
-async def update_runbook_sets(id: str, bg_tasks: BackgroundTasks):
-    rs = storage_svc.get_runbook_set(uuid.UUID(id))
-    if rs is None:
-        raise HTTPException(status_code=404, detail=f"the runbook set not found")
-
-    repo_dir = os.path.join(cwd, f"{parse_repo(rs.repo)}-{rs.branch}")
-
-    if not os.path.exists(repo_dir):
-        raise HTTPException(
-            status_code=500, detail="the runbook set repo dir not found"
-        )
-
-    pull_result = pull(cwd=repo_dir)
-    if pull_result.return_code != 0:
-        raise HTTPException(status_code=500, detail=pull_result.stderr)
-
-    fetch_result = fetch_head_commit(cwd=repo_dir)
-    if fetch_result.return_code != 0:
-        raise HTTPException(status_code=500, detail=fetch_result.stderr)
-
-    version = fetch_result.stdout
-    rsv = storage_svc.find_runbook_set_version(version=version)
-    if rsv is not None:
-        # TODO checking state
-        return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
-
-    bg_tasks.add_task(index, rs.id, repo_dir, version, rag_svc, storage_svc)
-    return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
 
 
 @app.delete("/runbooksets/{id}")

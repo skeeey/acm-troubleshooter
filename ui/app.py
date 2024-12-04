@@ -1,13 +1,12 @@
 import sys
 import os
 import logging
+import requests
 
 import streamlit as st
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from server.main import diagnose_issue, create_issue
 from server.models import Request, Response
-
 
 # log settings
 LOG_DATE_FORMAT = "%H:%M:%S"
@@ -16,6 +15,27 @@ LOG_FORMAT = "%(asctime)s - [%(levelname)s] %(module)s/%(lineno)d: %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
+# server settings
+server_url = "http://127.0.0.1:8000"
+
+def create_issue(req: Request)-> Response:
+    print(req.model_dump_json())
+    resp = requests.put(f"{server_url}/issues", data=req.model_dump_json())
+    if resp.status_code == 200:
+        return Response.model_validate_json(resp.content)
+    
+    #TODO handle errors
+    logger.error("failed to create issue (status_code=%d)", resp.status_code)
+    return None
+
+def diagnose_issue(issue_id: str, req: Request)-> Response:
+    resp = requests.post(f"{server_url}/issues/{issue_id}", data=req.model_dump_json())
+    if resp.status_code == 200:
+        return Response.model_validate_json(resp.content)
+    
+    #TODO handle errors
+    logger.error("failed to diagnose issue (status_code=%d)", resp.status_code)
+    return None
 
 st.set_page_config(page_icon="💬", layout="wide", page_title="ACM")
 
