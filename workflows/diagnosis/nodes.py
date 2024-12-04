@@ -45,7 +45,7 @@ def retrieve_func(rag_svc: RAGService):
         if len(relevant_nodes) == 0:
             logger.warning("no relevant nodes retrieved")
             current_state["terminated"] = True
-            current_state["plan"] = ""
+            current_state["plan"] = "There is no plan for this issue."
             current_state["reasoning"] = "No similar docs are found."
             return current_state
         
