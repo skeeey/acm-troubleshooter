@@ -1,4 +1,4 @@
-## Prepare
+## Run services locally
 
 1. Create a virtual environment
 
@@ -15,33 +15,23 @@ source $VENV/bin/activate
 make deps
 ```
 
-3. Install [`omc` command](https://github.com/gmeghnag/omc)
-
-## Diagnose an ACM issue with runbooks and must-gather
+3. Run the RESTful service
 
 ```sh
-# For example:
-# - Using groq https://console.groq.com llama-3.1-70b-versatile
-#   export LM_MODEL=llama-3.1-70b-versatile
-#   export LM_API_BASE=https://api.groq.com/openai/v1
-#   export LM_API_KEY=<your-groq-api-key>
-# - Using ollama/qwen2.5:32b
-#   export LM_MODEL=ollama/qwen2.5:32b
-#   export LM_API_BASE=http://localhost:11434
-export LM_MODEL=<your-lm-model>
-export LM_API_BASE=<your-lm-api> 
-export LM_API_KEY=<your-lm-api-key>
-
-python -m apps.troubleshooter --runbooks=<your-runbooks-dir> \
-    --hub-mg=<your-hub-must-gather-dir> \
-    --cluster-mg=<your-managed-cluster-must-gather-dir> \
-    <your-issue>
+make local/run-server
 ```
 
-4. Run the service with web UI
+4. Add docs
 
-```bash
-make service
+```sh
+curl -s -X PUT --header "Content-Type: application/json" 127.0.0.1:8000/runbooksets \
+    -d '{"repo": "https://github.com/stolostron/foundation-docs.git", "branch": "main"}'
+```
+
+5. Run the web UI service
+
+```sh
+make local/run-streamlit
 ```
 
 ## Runbook Guideline
@@ -57,42 +47,18 @@ For a runbook, it should
     - specify whether the step should be run on the hub cluster or the managed cluster;
     - if one step needs to refer to the other runbooks, using the related runbook title as the markdown link text, for example, `[runbook_title](runbook_location)`
 
-## Refers to
-- https://github.com/stanfordnlp/dspy
-- https://github.com/langchain-ai/langgraph
-- https://github.com/gmeghnag/omc
-- https://langchain-ai.github.io/langgraph/tutorials/plan-and-execute/plan-and-execute/
-
 ## TODO
+- [ ] use a local LLM
+- [ ] support to ask ACM relevant questions/knowledge
+- [ ] (UI) support to evaluate the result
+- [ ] (UI) support to list current used docs
+- [ ] (UI) support to add user-owned docs
+- [ ] (UI) support to use user-owned docs
 
-```sh
-api_host="127.0.0.1:8000"
-
-# add a runbook repo and index the runbooks
-resp=$(curl -s -X PUT --header "Content-Type: application/json" \
-    $api_host/runbooksets \
-    -d '{"repo": "https://github.com/skeeey/foundation-docs.git", "branch": "test"}')
-echo $resp
-
-# runbook_set_id=$(echo $resp | jq -r '.id')
-# echo $runbook_set_id
-runbook_set_id="53dd9a8d-a331-4d64-9eb8-327da2f3ef55"
-
-# list runbook repos
-resp=$(curl -s -X GET $api_host/runbooksets)
-echo $resp
-
-# get a runbook repo with its indexed version 
-resp=$(curl -s -X GET $api_host/runbooksets/${runbook_set_id})
-echo $resp
-
-# exit
-
-# update a runbook repo
-resp=$(curl -s -X POST $api_host/runbooksets/${runbook_set_id})
-echo $resp
-
-# delete a runbook repo
-resp=$(curl -s -X DELETE $api_host/runbooksets/${runbook_set_id})
-echo $resp
-```
+## Refers to
+- https://github.com/stanfordnlp/dspy/
+- https://docs.llamaindex.ai/en/stable/
+- https://github.com/langchain-ai/langgraph/
+- https://docs.streamlit.io/
+- https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_adaptive_rag/
+- https://langchain-ai.github.io/langgraph/tutorials/plan-and-execute/plan-and-execute/

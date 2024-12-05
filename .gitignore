@@ -11,3 +11,5 @@ _output
 build
 dist
 troubleshooter.spec
+
+*.password
