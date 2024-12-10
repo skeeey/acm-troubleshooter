@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 Settings.llm = None
 Settings.embed_model = HuggingFaceEmbedding(model_name=BGE.name)
 Settings.transformations = [SentenceSplitter(chunk_size=BGE.chunk_size, chunk_overlap=200)]
+# TODO use the latest doc sources
 doc_sources = os.getenv("DOC_SOURCES").split(",")
 
 # default llm settings

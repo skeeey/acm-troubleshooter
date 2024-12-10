@@ -50,6 +50,7 @@ For a runbook, it should
 ## TODO
 - [ ] support to ask ACM relevant questions/knowledge
 - [ ] test with current troubleshooting docs
+- [ ] test user issues (slack)
 - [ ] evaluate the retrieve results
 - [ ] evaluate the LLM response results
 - [ ] use a local LLM

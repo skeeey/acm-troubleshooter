@@ -57,21 +57,20 @@ def show_asst_resp(resp: Response):
 # TODO using st.sidebar to add configuration
 st.set_page_config(page_icon="💬", layout="wide", page_title="ACM Assistant")
 
-# TODO remove the header height
-st.markdown(
-    """
-  <style>
-      .reportview-container {
-          margin-top: -2em;
-      }
-      #MainMenu {visibility: hidden;}
-      .stAppDeployButton {display:none;}
-      footer {visibility: hidden;}
-      #stDecoration {display:none;}
-  </style>
-""",
-    unsafe_allow_html=True,
-)
+REMOVE_PADDING_FROM_SIDES="""
+<style>
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 0rem;
+    }
+    div[data-testid="stToolbar"] {
+        visibility: hidden;
+        display: none;
+    }
+</style>
+"""
+
+st.markdown(REMOVE_PADDING_FROM_SIDES, unsafe_allow_html=True)
 
 st.title("🤖 ACM Assistant")
 """
