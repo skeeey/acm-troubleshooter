@@ -15,13 +15,12 @@ class Issue(SQLModel, table=True):
     issue: str
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
-class Diagnosis(SQLModel, table=True):
+class Response(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    plan: str | None = None
+    asst_resp: str | None = None
     reasoning: str | None = None
-    user_suggestion: str | None = None
     referenced_docs: list[str] | None = Field(default=None, sa_column=Column(JSON))
-    results: str | None = None
+    user_resp: str | None = None
     hub_commands: list[str] | None = Field(default=None, sa_column=Column(JSON))
     spoke_commands: list[str] | None = Field(default=None, sa_column=Column(JSON))
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
@@ -38,7 +37,7 @@ class Evaluation(SQLModel, table=True):
     feedback: str | None = None
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     issue_id: uuid.UUID = Field(nullable=False, foreign_key="issue.id", ondelete="CASCADE")
-    step_id: uuid.UUID = Field(nullable=False, foreign_key="diagnosis.id", ondelete="CASCADE")
+    resp_id: uuid.UUID = Field(nullable=False, foreign_key="response.id", ondelete="CASCADE")
 
 class RunbookSet(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -87,26 +86,26 @@ class StorageService:
         with Session(self.engine) as session:
             return session.exec(statement=select(Issue), execution_options={"prebuffer_rows": True})
     
-    def create_diagnosis_step(self, issue_id: uuid.UUID) -> Diagnosis:
-        step = Diagnosis(issue_id=issue_id)
+    def create_resp(self, issue_id: uuid.UUID) -> Response:
+        resp = Response(issue_id=issue_id)
         with Session(self.engine) as session:
-            session.add(step)
+            session.add(resp)
             session.commit()
-            session.refresh(step)
-            return step
+            session.refresh(resp)
+            return resp
 
-    def update_diagnosis_step(self, updated: Diagnosis):
+    def update_resp(self, updated: Response):
         with Session(self.engine) as session:
             session.add(updated)
             session.commit()
             session.refresh(updated)
     
-    def get_diagnosis_step(self, id: uuid.UUID) -> Diagnosis:
+    def get_resp(self, id: uuid.UUID) -> Response:
         with Session(self.engine) as session:
-            return session.get(Diagnosis, id)
+            return session.get(Response, id)
     
-    def evaluate_issue(self, issue_id: uuid.UUID, step_id: uuid.UUID, score: int, feedback: str = None):
-        evaluation = Evaluation(score=score, feedback=feedback, issue_id=issue_id, step_id=step_id)
+    def evaluate(self, issue_id: uuid.UUID, resp_id: uuid.UUID, score: int, feedback: str = None):
+        evaluation = Evaluation(score=score, feedback=feedback, issue_id=issue_id, resp_id=resp_id)
         with Session(self.engine) as session:
             session.add(evaluation)
             session.commit()

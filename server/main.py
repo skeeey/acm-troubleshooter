@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse
 from llama_index.core import Settings
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from services.diagnosis import DiagnosisService
+from services.llm import LLMService
 from services.index import RAGService
 from services.storage import StorageService
 from server.models import (
@@ -19,11 +19,11 @@ from server.models import (
     RetrievalConfig,
     Context,
     Request,
+    Response,
+    EvaluationRequest,
     RunBookSetRequest,
     RunBookSetResponse,
     RunBookSetVersion,
-    add_result,
-    resp,
 )
 from tasks.runbooks import index
 from tools.common import is_empty
@@ -42,19 +42,19 @@ logger = logging.getLogger(__name__)
 
 # rag settings
 Settings.llm = None
-Settings.embed_model = HuggingFaceEmbedding(
-    model_name=BGE.name, trust_remote_code=BGE.trust_remote_code
-)
-Settings.transformations = [
-    SentenceSplitter(chunk_size=BGE.chunk_size, chunk_overlap=200)
-]
+Settings.embed_model = HuggingFaceEmbedding(model_name=BGE.name)
+Settings.transformations = [SentenceSplitter(chunk_size=BGE.chunk_size, chunk_overlap=200)]
+doc_sources = os.getenv("DOC_SOURCES").split(",")
 
-logger.info("init the llm setting and the services")
+# default llm settings
+llm_model=os.getenv("LM_MODEL")
+llm_api_base=os.getenv("LM_API_BASE")
+llm_api_key=os.getenv("LM_API_KEY")
 
 # init services
 storage_svc = StorageService(db_url=os.getenv("DATABASE_URL"))
 rag_svc = RAGService(db_url=os.getenv("DATABASE_URL"), embed_dim=BGE.dims)
-diagnosis_svc = DiagnosisService(rag_svc=rag_svc)
+llm_svc = LLMService(rag_svc=rag_svc)
 
 # load configurations
 cwd = os.getenv("DOC_DIR")
@@ -74,44 +74,50 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.put("/issues")
-async def create_issue(req: Request):
-    if is_empty(req.issue):
-        raise HTTPException(status_code=422, detail="the issue is required")
+@app.post("/issues")
+async def resolve(req: Request) -> Response:
+    issue_id = req.issue_id
 
-    ctx = req.context
-    if ctx is None:
-        ctx = Context(
-            llm_config=LLMConfig(
-                model=os.getenv("LM_MODEL"),
-                api_base=os.getenv("LM_API_BASE"),
-                api_key=os.getenv("LM_API_KEY"),
-            ),
-            retrieval_config=RetrievalConfig(
-                doc_sources=os.getenv("DOC_SOURCES").split(",")
-            ),
+    # a new issue, create it and give an init response
+    if is_empty(issue_id):
+        if is_empty(req.user_inputs):
+            raise HTTPException(status_code=422, detail="the issue is required")
+
+        ctx = req.context
+        if ctx is None:
+            ctx = Context(
+                llm_config=LLMConfig(model=llm_model, api_base=llm_api_base,api_key=llm_api_key),
+                retrieval_config=RetrievalConfig(doc_sources=doc_sources),
+            )
+
+        issue = storage_svc.create_issue(req.user_inputs)
+        storage_svc.create_context(
+            issue_id=issue.id,
+            llm_cfg=ctx.llm_config.model_dump_json(),
+            retrieval_cfg=ctx.retrieval_config.model_dump_json(),
         )
+        db_resp = storage_svc.create_resp(issue_id=issue.id)
 
-    issue = storage_svc.create_issue(req.issue)
-    storage_svc.create_context(
-        issue_id=issue.id,
-        llm_cfg=ctx.llm_config.model_dump_json(),
-        retrieval_cfg=ctx.retrieval_config.model_dump_json(),
-    )
-    step = storage_svc.create_diagnosis_step(issue_id=issue.id)
+        llm_resp = llm_svc.response(
+            mcfg=ctx.llm_config,
+            rcfg=ctx.retrieval_config,
+            issue=req.user_inputs,
+        )
+        db_resp.asst_resp = llm_resp["response"]
+        db_resp.reasoning = llm_resp["reasoning"]
+        db_resp.referenced_docs = llm_resp["relevant_doc_names"]
+        
+        storage_svc.update_resp(db_resp)
+        
+        return Response(issue_id=str(issue.id), resp_id=str(db_resp.id),
+                        asst_resp=db_resp.asst_resp, reasoning=db_resp.reasoning,)
 
-    result = diagnosis_svc.diagnose(
-        mcfg=ctx.llm_config, rcfg=ctx.retrieval_config, issue=req.issue
-    )
-
-    storage_svc.update_diagnosis_step(add_result(step, result))
-    return resp(issue, step, result)
-
-
-@app.post("/issues/{issue_id}")
-async def diagnose_issue(issue_id: str, req: Request):
-    if is_empty(req.last_step_id):
-        raise HTTPException(status_code=422, detail="the last_step_id is required")
+    # an existed issue, continue to resolve the issue with user's new inputs
+    if is_empty(req.last_resp_id):
+        raise HTTPException(status_code=422, detail="the last_asst_resp_id is required")
+    
+    if is_empty(req.user_inputs):
+        raise HTTPException(status_code=422, detail="the user resp is required")
 
     ctx = storage_svc.find_context(uuid.UUID(issue_id))
     if ctx is None:
@@ -121,40 +127,43 @@ async def diagnose_issue(issue_id: str, req: Request):
     if issue is None:
         raise HTTPException(status_code=404, detail="the issue not found")
 
-    last_step = storage_svc.get_diagnosis_step(uuid.UUID(req.last_step_id))
-    if last_step is None:
-        raise HTTPException(status_code=404, detail="the step not found")
+    last_resp = storage_svc.get_resp(uuid.UUID(req.last_resp_id))
+    if last_resp is None:
+        raise HTTPException(status_code=404, detail="the last asst resp not found")
 
-    if not is_empty(req.results):
-        last_step.results = req.results
-        storage_svc.update_diagnosis_step(last_step)
+    last_resp.user_resp = req.user_inputs
+    storage_svc.update_resp(last_resp)
 
-    new_step = storage_svc.create_diagnosis_step(issue_id=issue.id)
+    db_resp = storage_svc.create_resp(issue_id=issue.id)
 
-    result = diagnosis_svc.diagnose(
+    llm_resp = llm_svc.response(
         mcfg=LLMConfig.model_validate_json(ctx.llm_config),
         rcfg=RetrievalConfig.model_validate_json(ctx.retrieval_config),
         issue=issue.issue,
-        plan=last_step.plan,
-        results=last_step.results,
+        last_asst_resp=last_resp.asst_resp,
+        feedback=req.user_inputs,
     )
 
-    storage_svc.update_diagnosis_step(add_result(new_step, result))
-    return resp(issue, new_step, result)
+    db_resp.asst_resp = llm_resp["response"]
+    db_resp.reasoning = llm_resp["reasoning"]
+    db_resp.referenced_docs = llm_resp["relevant_doc_names"]
+    
+    storage_svc.update_resp(db_resp)
+    
+    return Response(issue_id=str(issue.id), resp_id=str(db_resp.id),
+                    asst_resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
 
-
-@app.put("/issues/{issue_id}/evaluation/{step_id}")
-async def evaluate_issue(issue_id: str, step_id: str, req: Request):
+@app.put("/issues/{issue_id}/evaluation/{resp_id}")
+async def evaluate(issue_id: str, resp_id: str, req: EvaluationRequest):
     issue = storage_svc.get_issue(uuid.UUID(issue_id))
     if issue is None:
         raise HTTPException(status_code=404, detail="the issue not found")
 
-    last_step = storage_svc.get_diagnosis_step(uuid.UUID(step_id))
-    if last_step is None:
+    resp = storage_svc.get_resp(uuid.UUID(resp_id))
+    if resp is None:
         raise HTTPException(status_code=404, detail="the step not found")
 
-    storage_svc.evaluate_issue(uuid.UUID(issue_id), uuid.UUID(step_id), req.score, req.results)
-
+    storage_svc.evaluate(uuid.UUID(issue_id), uuid.UUID(resp_id), req.score, req.feedback)
 
 @app.get("/runbooksets")
 async def list_runbook_sets():
@@ -180,8 +189,7 @@ async def get_runbook_set(id: str):
         id=str(rs.id), repo=rs.repo, branch=rs.branch, versions=versions
     )
 
-
-@app.put("/runbooksets")
+@app.post("/runbooksets")
 async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: BackgroundTasks):
     dist = f"{parse_repo(req.repo)}-{req.branch}"
     repo_dir = os.path.join(cwd, dist)
@@ -228,7 +236,6 @@ async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: Backgro
 
     bg_tasks.add_task(index, new_rs.id, repo_dir, version, rag_svc, storage_svc)
     return RedirectResponse(status_code=303, url=f"/runbooksets/{str(new_rs.id)}")
-
 
 @app.delete("/runbooksets/{id}")
 async def delete_runbook_sets(id: str):

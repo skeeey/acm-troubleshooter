@@ -48,17 +48,21 @@ For a runbook, it should
     - if one step needs to refer to the other runbooks, using the related runbook title as the markdown link text, for example, `[runbook_title](runbook_location)`
 
 ## TODO
-- [ ] use a local LLM
 - [ ] support to ask ACM relevant questions/knowledge
-- [ ] (UI) support to evaluate the result
-- [ ] (UI) support to list current used docs
-- [ ] (UI) support to add user-owned docs
-- [ ] (UI) support to use user-owned docs
+- [ ] test with current troubleshooting docs
+- [ ] evaluate the retrieve results
+- [ ] evaluate the LLM response results
+- [ ] use a local LLM
+- [ ] support to evaluate the result
+- [ ] support to show current used docs in UI
+- [ ] support to add and use user-owned docs
 
 ## Refers to
 - https://github.com/stanfordnlp/dspy/
-- https://docs.llamaindex.ai/en/stable/
-- https://github.com/langchain-ai/langgraph/
 - https://docs.streamlit.io/
+- https://docs.llamaindex.ai/en/stable/
+- https://www.llamaindex.ai/blog/evaluating-the-ideal-chunk-size-for-a-rag-system-using-llamaindex-6207e5d3fec5
+- https://github.com/langchain-ai/langgraph/
 - https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_adaptive_rag/
 - https://langchain-ai.github.io/langgraph/tutorials/plan-and-execute/plan-and-execute/
+- https://huggingface.co/spaces/mteb/leaderboard

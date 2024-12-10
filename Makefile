@@ -4,6 +4,10 @@ SHELL:=/bin/bash
 deps:
 	pip install -r requirements.txt
 
+.PHONY: run-pgvector
+run-pgvector:
+	hack/run_pgvector.sh
+
 .PHONY: run-server
 run-server:
 	hack/run_server.sh
@@ -18,4 +22,4 @@ local/run-server:
 
 .PHONY: local/run-streamlit
 local/run-streamlit:
-	streamlit run --server.port=8080 ui/app.py
+	streamlit run --server.port=8080 ui/main.py

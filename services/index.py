@@ -10,7 +10,6 @@ from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
 from llama_index.vector_stores.postgres import PGVectorStore
 from pydantic import BaseModel
 from sqlalchemy import make_url
-from tools.loaders.markdown import get_markdown_title
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,8 @@ class DocInfo(BaseModel):
     hash: str
 
 class RAGService:
-    def __init__(self, db_url: str, embed_dim: int, db_table="vector_docs"):
+    def __init__(self, db_url: str, embed_dim: int, db_table="vector_docs",
+                 similarity_cutoff=0.5, similarity_top_k=3, hnsw_ef_search=300):
         url = make_url(db_url)
         self.vector_store = PGVectorStore.from_params(
             database=url.database,
@@ -49,6 +49,9 @@ class RAGService:
             },
         )
         self.index = VectorStoreIndex.from_vector_store(vector_store=self.vector_store)
+        self.similarity_cutoff = similarity_cutoff
+        self.similarity_top_k = similarity_top_k
+        self.hnsw_ef_search = hnsw_ef_search
     
     def index_docs(self, docs: list[Document]):
         if len(docs) == 0:
@@ -57,23 +60,7 @@ class RAGService:
         start_time = time.time()
         for doc in docs:
             self.index.insert(doc)
-        logger.info("docs (total=%d) are indexed, time used %.3fs", len(docs), (time.time() - start_time))
-    
-    def refresh_docs(self, docs: list[Document], source: str):
-        doc_infos = self.list_docs(source)
-        for doc in docs:
-            existing, doc_info = self.doc_exists(doc_infos, doc.doc_id)
-            if existing:
-                if doc.metadata["hash"] == doc_info.hash:
-                    logger.info("runbook '%s' not changed", doc.metadata["name"])
-                    continue
-                
-                logger.info("update runbook '%s'", doc.metadata["name"])
-                self.index.update_ref_doc(doc)
-                continue
-            
-            self.index.insert(doc)
-            logger.info("insert new runbook '%s'", doc.metadata["name"])
+        logger.debug("docs (total=%d) are indexed, time used %.3fs", len(docs), (time.time() - start_time))
 
     def delete_docs(self, source: str):
         doc_infos = self.list_docs(source)
@@ -103,8 +90,7 @@ class RAGService:
             docs.append(DocInfo(id=doc_id, name=doc_name, hash=doc_hash))
         return docs
 
-    def retrieve(self, query: str, sources: list[str]=None,
-                 minimum_similarity_cutoff=0.65, similarity_top_k=10, hnsw_ef_search=300) -> list[NodeWithScore]:
+    def retrieve(self, query: str, sources: list[str]=None) -> list[NodeWithScore]:
         if sources is None:
             raise ValueError("sources are required")
         
@@ -116,23 +102,22 @@ class RAGService:
         )
 
         retriever = self.index.as_retriever(
-            similarity_top_k=similarity_top_k,
-            vector_store_kwargs={"hnsw_ef_search": hnsw_ef_search},
+            similarity_top_k=self.similarity_top_k,
+            vector_store_kwargs={"hnsw_ef_search": self.hnsw_ef_search},
             filters=metadata_filters,
         )
         query_engine = RetrieverQueryEngine(
             retriever=retriever,
-            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=minimum_similarity_cutoff)]
+            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=self.similarity_cutoff)]
         )
 
-        # TODO if the length of source nodes is 0, reduce the similarity_cutoff to retrieve
         start_time = time.time()
         response = query_engine.query(query)
-        logger.info("docs retrieved (total=%d, query=%s, sources=%s), time used %.3fs",
+        logger.debug("docs retrieved (total=%d, query=%s, sources=%s), time used %.3fs",
                     len(response.source_nodes), query, sources, (time.time() - start_time))
         nodes = []
         for node in response.source_nodes:
-            logger.info("-- doc: [%.3f] %s" % (node.score, get_markdown_title(node.text)))
+            logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
             nodes.append(node)
         return nodes
 

@@ -2,12 +2,20 @@
 
 REPO_DIR="$(cd "$(dirname ${BASH_SOURCE[0]})/.." ; pwd -P)"
 
-data_dir="${HOME}/acm-docs-postgres-data"
+data_dir="${HOME}/postgres-data"
+pw_file="$REPO_DIR/pgvector.password"
+
 pgvector_img="pgvector/pgvector:pg16"
+
 pgvector_pw=$(LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 16)
 
 mkdir -p $data_dir
-echo "$pgvector_pw" > $REPO_DIR/pgvector.password
+
+if [ -f "$pw_file" ]; then
+    pgvector_pw=$(cat $pw_file)
+else
+    echo -n "$pgvector_pw" > $pw_file
+fi
 
 podman rm psql-acm -f
 
