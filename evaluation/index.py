@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 from llama_index.core import Settings 
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from signatures.retriever import grade_relevant_nodes
+from signatures.retriever import convert_question, grade_relevant_nodes
 from services.index import RAGService
 from services.storage import StorageService
 from tools.embeddings.huggingface import BGE
-from evaluation.issues import items
+from evaluation.cases import *
 
 # load envs
 load_dotenv()
@@ -56,8 +56,8 @@ def list_issues():
 # - Relevancy
 # - TODO Faithfulness (hallucinations, add expected results or use an advanced LLM)
 # - Response Time
-def evaluate_retrieve():
-    for issue in items:
+def evaluate_retrieve(cases):
+    for issue in cases:
         start_time = time.time()
         nodes = rag_svc.retrieve(query=issue, sources=sources)
         r_elapsed_time = time.time() - start_time
@@ -78,4 +78,8 @@ def evaluate_retrieve():
             print("%.3f, %s" % (node.score, node.metadata["filename"]))
 
 if __name__ == "__main__":
-    evaluate_retrieve()
+    # evaluate_retrieve()
+    for question in cluster_cases:
+        print(question)
+        new_question = convert_question("", question)
+        print(new_question)

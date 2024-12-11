@@ -1,10 +1,8 @@
 # coding: utf-8
 
 import logging
-import dspy
-from signatures.response import Response, ResponseWithContext
+from signatures.response import respond
 from signatures.retriever import grade_relevant_nodes
-from prompts.templates import PLANNER_NOTICES
 from services.index import RAGService
 from workflows.self_rag.state import copy_state
 
@@ -47,36 +45,11 @@ def answer_func():
         issue = current_state["issue"]
         feedback = current_state["feedback"]
         
-        if len(previous_resp) == 0:
-            logger.info("provide the response for the issue: %s", issue)
-            # no response was provided yet, give an initial response
-            resp = dspy.ChainOfThought(Response)
-            resp_result = resp(
-                documents=documents,
-                notices=PLANNER_NOTICES,
-                issue=issue,
-            )
-            logger.debug(resp_result)
-
-            current_state["response"] = resp_result.response
-            current_state["reasoning"] = resp_result.reasoning
-            # current_state["hub_commands"] = resp_result.hub_commands
-            # current_state["spoke_commands"] = resp_result.spoke_commands
-            return current_state
+        result = respond(documents=documents, issue=issue,
+                         previous_responses=previous_resp, user_feedback=feedback)
         
-        resp_with_ctx = dspy.ChainOfThought(ResponseWithContext)
-        result = resp_with_ctx(
-            documents=documents,
-            notices=PLANNER_NOTICES,
-            previous_responses=previous_resp,
-            issue=issue,
-            user_feedback=feedback,
-        )
-        logger.debug(result)
         current_state["response"] = result.response
         current_state["reasoning"] = result.reasoning
-        # current_state["hub_commands"] = replan_response.hub_commands
-        # current_state["spoke_commands"] = replan_response.spoke_commands
         return current_state
 
     return answer

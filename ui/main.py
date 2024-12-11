@@ -79,7 +79,7 @@ troubleshoot why the status of my cluster cluster-a is unknown, or
 troubleshoot why my addons are missing in my cluster cluster-b, etc.
 And I also can answer the ACM questions, for example, what's the multicluster global hub? or
 how to get the must-gather for multicluster global hub? etc.
-Using /new to start a new session.
+Using /new to start a new question.
 """
 
 if "messages" not in st.session_state:

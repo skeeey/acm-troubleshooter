@@ -56,8 +56,7 @@ def mk_output_dir(output_dir):
 def load_acm_docs(dir: str, source: str, exclude_list=None) -> list[Document]:
     if exclude_list is None:
         exclude_list = ["apis", "README.adoc", "SECURITY.adoc", "EXTERNAL_CONTRIBUTING.adoc",
-                        "welcome.adoc", ".asciidoctorconfig.adoc", "common-attributes.adoc",
-                        "main.adoc", "master.adoc"]
+                        ".asciidoctorconfig.adoc", "common-attributes.adoc", "main.adoc", "master.adoc"]
 
     parent_dir = os.path.dirname(dir)
     md_dir = os.path.join(parent_dir, f"{os.path.basename(dir)}-md")
