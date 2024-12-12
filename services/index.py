@@ -81,11 +81,11 @@ class RAGService:
 
         docs = []
         for node in nodes:
-            doc_id = node.extra_info["id"]
+            doc_id = node.ref_doc_id
             existing, _ = self.doc_exists(docs, doc_id)
             if existing:
                 continue
-            doc_name = node.extra_info["name"]
+            doc_name = node.extra_info["filename"]
             doc_hash = node.extra_info["hash"]
             docs.append(DocInfo(id=doc_id, name=doc_name, hash=doc_hash))
         return docs

@@ -48,13 +48,12 @@ For a runbook, it should
     - if one step needs to refer to the other runbooks, using the related runbook title as the markdown link text, for example, `[runbook_title](runbook_location)`
 
 ## TODO
-- [ ] support to ask ACM relevant questions/knowledge
-- [ ] test with current troubleshooting docs
-- [ ] test user issues (slack)
+- [x] support to ask ACM relevant questions/knowledge
+- [ ] continue to fine-tune the result with current troubleshooting docs and user issues (slack)
 - [ ] evaluate the retrieve results
 - [ ] evaluate the LLM response results
 - [ ] use a local LLM
-- [ ] support to evaluate the result
+- [x] support to evaluate the result
 - [ ] support to show current used docs in UI
 - [ ] support to add and use user-owned docs
 

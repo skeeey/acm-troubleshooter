@@ -55,7 +55,7 @@ def mk_output_dir(output_dir):
 
 def load_acm_docs(dir: str, source: str, exclude_list=None) -> list[Document]:
     if exclude_list is None:
-        exclude_list = ["apis", "README.adoc", "SECURITY.adoc", "EXTERNAL_CONTRIBUTING.adoc",
+        exclude_list = ["apis", "api", "README.adoc", "SECURITY.adoc", "EXTERNAL_CONTRIBUTING.adoc",
                         ".asciidoctorconfig.adoc", "common-attributes.adoc", "main.adoc", "master.adoc"]
 
     parent_dir = os.path.dirname(dir)
@@ -104,6 +104,3 @@ def load_acm_docs(dir: str, source: str, exclude_list=None) -> list[Document]:
     docs.extend(to_docs(acm_troubleshooting_docs, source, acm_docs_attrs))
     docs.extend(to_docs(acm_docs, source, acm_docs_attrs, True))
     return docs
-
-if __name__ == "__main__":
-    to_docs(["/Users/wliu1/acm-docs/stolostron-rhacm-docs-2.12_prod-md/governance_grc_intro.adoc.md"], "test", acm_docs_attrs)
