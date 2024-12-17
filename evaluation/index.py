@@ -12,6 +12,7 @@ from signatures.retriever import convert_question, grade_relevant_nodes
 from services.index import RAGService
 from services.storage import StorageService
 from tools.embeddings.huggingface import BGE
+from tools.common import is_empty
 from evaluation.cases import *
 
 # load envs
@@ -30,11 +31,9 @@ dspy.configure(lm=lm)
 
 # rag settings
 Settings.llm = None
+Settings.context_window = 10240 # maximum input size to the LLM
 Settings.embed_model = HuggingFaceEmbedding(model_name=BGE.name)
 Settings.transformations = [SentenceSplitter(chunk_size=BGE.chunk_size, chunk_overlap=200)]
-
-# cutoff=0.5
-# top_k=3
 
 # init services
 storage_svc = StorageService(db_url=os.getenv("DATABASE_URL"))
@@ -56,30 +55,43 @@ def list_issues():
 # - Relevancy
 # - TODO Faithfulness (hallucinations, add expected results or use an advanced LLM)
 # - Response Time
-def evaluate_retrieve(cases):
-    for issue in cases:
-        start_time = time.time()
-        nodes = rag_svc.retrieve(query=issue, sources=sources)
-        r_elapsed_time = time.time() - start_time
+def evaluate_retrieve(issue, with_converter=False):
+    retrieve(issue)
 
-        start_time = time.time()
-        relevant_nodes = grade_relevant_nodes(nodes, issue)
-        g_elapsed_time = time.time() - start_time
-        
-        print("==============")
-        print("issue:", issue)
-        print("retrieved time used %.3fs" % r_elapsed_time)
-        print("grade time used %.3fs" % g_elapsed_time)
-        print("retrieved nodes:", len(nodes))
-        for node in nodes:
-            print("%.3f, %s" % (node.score, node.metadata["filename"]))
-        print("relevant nodes:", len(relevant_nodes))
-        for node in relevant_nodes:
-            print("%.3f, %s" % (node.score, node.metadata["filename"]))
+    if with_converter:
+        new_issue = convert_question("", issue)
+        retrieve(new_issue)
+
+def retrieve(query):
+    print("==============")
+    print("issue:", query)
+    if is_empty(query):
+        return
+    
+    start_time = time.time()
+    nodes = rag_svc.retrieve(query=query, sources=sources)
+    r_elapsed_time = time.time() - start_time
+
+    start_time = time.time()
+    relevant_nodes = grade_relevant_nodes(nodes, query)
+    g_elapsed_time = time.time() - start_time
+
+    print("retrieved time used %.3fs" % r_elapsed_time)
+    print("grade time used %.3fs" % g_elapsed_time)
+    print("retrieved nodes:", len(nodes))
+    for n in nodes:
+        print("%.3f, %s" % (n.score, n.metadata["filename"]))
+    print("relevant nodes:", len(relevant_nodes))
+    for rn in relevant_nodes:
+        print("%d, %.3f, %s" % (rn.score, rn.node.score, rn.node.metadata["filename"]))
 
 if __name__ == "__main__":
-    # evaluate_retrieve()
-    for question in cluster_cases:
-        print(question)
-        new_question = convert_question("", question)
-        print(new_question)
+    # for issue in irrelevant_cases:
+    #     evaluate_retrieve(issue, True)
+    
+    # for issue in cluster_cases:
+    #     evaluate_retrieve(issue)
+
+    for issue in question_cases:
+        evaluate_retrieve(issue, True)
+        

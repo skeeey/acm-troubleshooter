@@ -75,10 +75,13 @@ st.markdown(REMOVE_PADDING_FROM_SIDES, unsafe_allow_html=True)
 st.title("🤖 ACM Assistant")
 """
 I'm an ACM assistant. I can help you to troubleshoot the ACM issues, for example,
-troubleshoot why the status of my cluster cluster-a is unknown, or
-troubleshoot why my addons are missing in my cluster cluster-b, etc.
-And I also can answer the ACM questions, for example, what's the multicluster global hub? or
+troubleshoot why the status of the cluster cluster-a is unknown, or
+troubleshoot why my addons are missing in my cluster cluster-b, etc. And I also can
+answer the ACM questions, for example, what's the multicluster global hub? or
 how to get the must-gather for multicluster global hub? etc.
+"""
+
+"""
 Using /new to start a new question.
 """
 

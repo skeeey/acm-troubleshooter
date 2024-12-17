@@ -2,7 +2,7 @@
 
 import logging
 import dspy
-from prompts.templates import PLANNER_NOTICES
+from prompts.templates import RESPONSE_NOTICES
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class Response(dspy.Signature):
     
     response: str = dspy.OutputField()
 
-def respond(documents: list[str], issue: str, previous_responses = "", user_feedback="", notices=PLANNER_NOTICES):
+def respond(documents: list[str], issue: str, previous_responses = "", user_feedback="", notices=RESPONSE_NOTICES):
     resp = dspy.ChainOfThought(Response)
     result = resp(
         notices=notices,

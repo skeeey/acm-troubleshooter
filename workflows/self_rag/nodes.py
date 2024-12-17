@@ -2,31 +2,41 @@
 
 import logging
 from signatures.response import respond
-from signatures.retriever import grade_relevant_nodes
+from signatures.retriever import convert_question
 from services.index import RAGService
 from workflows.self_rag.state import copy_state
+from tools.common import is_empty
 
 logger = logging.getLogger(__name__)
 
 def retrieve_func(rag_svc: RAGService):
     def retrieve(state):
         current_state = copy_state(state)
+
         issue = current_state["issue"]
         sources = current_state["doc_sources"]
         retrieval_times = current_state["retrieval_times"]
+        feedback = current_state["feedback"]
 
-        nodes = rag_svc.retrieve(query=issue, sources=sources)
-        relevant_nodes = grade_relevant_nodes(nodes, issue)
-        if len(relevant_nodes) == 0:
-            logger.warning("no relevant nodes for issue: %s", issue)
-            current_state["terminated"] = True
-            current_state["response"] = "I have no idea for this issue."
-            current_state["reasoning"] = "No similar docs are found."
-            return current_state
+        query = issue
+        if not is_empty(feedback):
+            query = feedback
+
+        nodes = rag_svc.retrieve(query=query, sources=sources)
+        if len(nodes) == 0:
+            new_query = convert_question(contexts={}, query=query)
+            logger.info("no relevant nodes for query: %s, generate a new query", query, new_query)
+            nodes = rag_svc.retrieve(query=new_query, sources=sources)
+            if len(nodes) == 0:
+                logger.warning("no relevant nodes for query: %s", new_query)
+                current_state["terminated"] = True
+                current_state["response"] = "I have no idea for this issue."
+                current_state["reasoning"] = "No similar docs are found."
+                return current_state
         
         relevant_docs = []
         relevant_doc_names = []
-        for node in relevant_nodes:
+        for node in nodes:
             relevant_docs.append(node.text)
             relevant_doc_names.append(node.metadata["filename"])
 
@@ -40,6 +50,7 @@ def retrieve_func(rag_svc: RAGService):
 def answer_func():    
     def answer(state):
         current_state = copy_state(state)
+
         documents = current_state["relevant_docs"]
         previous_resp = current_state["response"]
         issue = current_state["issue"]

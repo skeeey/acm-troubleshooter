@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+import re
 import subprocess
 import tiktoken
 from pydantic import BaseModel
@@ -11,7 +12,22 @@ class CMDResult(BaseModel):
     stderr: str
 
 def is_empty(s: str) -> bool:
-    return (not s or len(s.strip()) == 0)
+    if not s:
+        return True
+    
+    striped = replace_start(s, '"', '')
+    striped = replace_end(striped, '"', '')
+
+    if len(striped.strip()) == 0:
+        return True
+
+    return False
+
+def replace_start(s: str, old_value: str, new_value: str):
+    return re.sub(f'^{old_value}', new_value, s)
+
+def replace_end(s: str, old_value: str, new_value: str):
+    return re.sub(f'{old_value}$', new_value, s)
 
 def count_tokens(text, encoding_name="cl100k_base"):
     encoding = tiktoken.get_encoding(encoding_name)

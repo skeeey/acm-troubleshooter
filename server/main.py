@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 # rag settings
 Settings.llm = None
+Settings.context_window = 10240 # maximum input size to the LLM
 Settings.embed_model = HuggingFaceEmbedding(model_name=BGE.name)
 Settings.transformations = [SentenceSplitter(chunk_size=BGE.chunk_size, chunk_overlap=200)]
 # TODO use the latest doc sources

@@ -14,13 +14,11 @@ def build_self_rag_graph(rag_svc: RAGService):
 
     # Build graph
     workflow.add_edge(START, "retrieve")
-    # workflow.add_edge("transform", "retrieve")
     workflow.add_conditional_edges(
         "retrieve",
         dispatch,
         {
             "continue": "answer",
-            "retrieve": "retrieve",
             "terminated": END,
         },
     )

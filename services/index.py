@@ -8,8 +8,10 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import Document, NodeWithScore
 from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
 from llama_index.vector_stores.postgres import PGVectorStore
+from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
 from pydantic import BaseModel
 from sqlalchemy import make_url
+from tools.common import is_empty
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ class DocInfo(BaseModel):
 
 class RAGService:
     def __init__(self, db_url: str, embed_dim: int, db_table="vector_docs",
-                 similarity_cutoff=0.5, similarity_top_k=3, hnsw_ef_search=300):
+                 similarity_cutoff=0.5, top_k=10, top_n=3, hnsw_ef_search=300):
         url = make_url(db_url)
         self.vector_store = PGVectorStore.from_params(
             database=url.database,
@@ -50,7 +52,8 @@ class RAGService:
         )
         self.index = VectorStoreIndex.from_vector_store(vector_store=self.vector_store)
         self.similarity_cutoff = similarity_cutoff
-        self.similarity_top_k = similarity_top_k
+        self.similarity_top_k = top_k
+        self.rerank_top_n = top_n
         self.hnsw_ef_search = hnsw_ef_search
     
     def index_docs(self, docs: list[Document]):
@@ -91,6 +94,9 @@ class RAGService:
         return docs
 
     def retrieve(self, query: str, sources: list[str]=None) -> list[NodeWithScore]:
+        if is_empty(query):
+            return []
+        
         if sources is None:
             raise ValueError("sources are required")
         
@@ -106,19 +112,42 @@ class RAGService:
             vector_store_kwargs={"hnsw_ef_search": self.hnsw_ef_search},
             filters=metadata_filters,
         )
-        query_engine = RetrieverQueryEngine(
-            retriever=retriever,
-            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=self.similarity_cutoff)]
-        )
+        query_engine = RetrieverQueryEngine(retriever=retriever)
 
+        logger.info("retrieve docs for %s (sources=%s)", query, sources)
         start_time = time.time()
         response = query_engine.query(query)
-        logger.debug("docs retrieved (total=%d, query=%s, sources=%s), time used %.3fs",
-                    len(response.source_nodes), query, sources, (time.time() - start_time))
+        logger.info("docs retrieved (total=%d, top_k=%d), time used %.3fs",
+                    len(response.source_nodes), self.similarity_top_k, (time.time() - start_time))
+        if logger.isEnabledFor(logging.DEBUG):
+            for node in response.source_nodes:
+                logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
+        
+        # similarity cutoff 
+        processor = SimilarityPostprocessor(similarity_cutoff=self.similarity_cutoff)
+        filtered_nodes = processor.postprocess_nodes(response.source_nodes)
+        logger.info("filtered nodes (total=%d, cutoff=%0.2f)",
+                     len(filtered_nodes), self.similarity_cutoff)
+        if len(filtered_nodes) == 0:
+            return []
+        if logger.isEnabledFor(logging.DEBUG):
+            for node in filtered_nodes:
+                logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
+
+        # rerank
+        start_time = time.time()
+        reranker = FlagEmbeddingReranker(model="BAAI/bge-reranker-large", top_n=self.rerank_top_n)
+        reranked_nodes = reranker.postprocess_nodes(filtered_nodes, query_str=query)
+        logger.info("docs reranked (total=%d, top_n=%d), time used %.3fs",
+                    len(reranked_nodes), self.rerank_top_n, (time.time() - start_time))
+        if logger.isEnabledFor(logging.DEBUG):
+            for node in reranked_nodes:
+                logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
+
         nodes = []
-        for node in response.source_nodes:
-            logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
-            nodes.append(node)
+        for node in reranked_nodes:
+            if node.score > 0:
+                nodes.append(node)
         return nodes
 
     def doc_exists(self, docs: list[DocInfo], doc_id: str):
