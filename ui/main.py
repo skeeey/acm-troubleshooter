@@ -8,7 +8,7 @@ import streamlit as st
 from streamlit_feedback import streamlit_feedback
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from server.models import Request, Response, EvaluationRequest
+from models.chat import Request, Response, EvaluationRequest
 
 # log settings
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -21,36 +21,23 @@ logger = logging.getLogger(__name__)
 server_url = "http://127.0.0.1:8000"
 
 def send_req(req: Request) -> Response:
-    resp = requests.post(f"{server_url}/issues", data=req.model_dump_json())
+    resp = requests.post(f"{server_url}/chat", data=req.model_dump_json())
     if resp.status_code == 200:
         return Response.model_validate_json(resp.content), None
     
     return None, f"failed to response, err=({resp.status_code}, {resp.content})"
 
-def send_feedback(issue_id: str, resp_id: str, req: EvaluationRequest):
-    resp = requests.put(f"{server_url}/issues/{issue_id}/evaluation/{resp_id}", data=req.model_dump_json())
+def send_feedback(req: EvaluationRequest):
+    resp = requests.put(f"{server_url}/evaluation", data=req.model_dump_json())
     if resp.status_code == 200:
         return None
     
-    logger.error("failed to send (score=%d, feedback=%s) for issue %s (resp=%s), err=(%d,%s)",
-                 req.score, req.feedback, issue_id, resp_id, resp.status_code, resp.content)
+    logger.error("failed to send (score=%d, feedback=%s) for issue %s-%s, err=(%d,%s)",
+                 req.score, req.feedback, req.issue_id, req.resp_id, resp.status_code, resp.content)
     return None
 
 def show_asst_resp(resp: Response):
-    md = ["##### Reasoning", resp.reasoning, "##### Response", resp.asst_resp]
-
-    if resp.hub_commands is not None and len(resp.hub_commands) > 0:
-        md.append("##### Hub Commands")
-        md.append("```sh")
-        md.append("\n".join(resp.hub_commands))
-        md.append("```")
-
-    if resp.spoke_commands is not None and len(resp.spoke_commands) > 0:
-        md.append("##### Spoke Commands")
-        md.append("```sh")
-        md.append("\n".join(resp.spoke_commands))
-        md.append("```")
-    
+    md = ["##### Reasoning", resp.reasoning, "##### Response", resp.resp]    
     st.markdown("\n".join(md))
 
 # start the web page
@@ -116,10 +103,9 @@ if prompt := st.chat_input(placeholder="Message ACM Assistant"):
         st.markdown(prompt)
 
     with st.spinner("Thinking ..."):
-        req = Request(user_inputs=prompt)
+        req = Request(query=prompt)
         if st.session_state["response"] is not None:
             req.issue_id = st.session_state["response"].issue_id
-            req.last_resp_id = st.session_state["response"].resp_id
         
         resp, err = send_req(req=req)
         if err is not None:
@@ -144,5 +130,5 @@ if st.session_state["response"]:
         if feedback["score"] == "👍":
             score = 1
         
-        send_feedback(issue_id, resp_id, EvaluationRequest(score=score, feedback=feedback["text"]))
+        send_feedback(EvaluationRequest(issue_id=issue_id, resp_id=resp_id, score=score, feedback=feedback["text"]))
         st.toast("Thanks your feedback!", icon="🙏")

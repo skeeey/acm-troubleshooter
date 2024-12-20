@@ -2,6 +2,7 @@
 
 import os
 import time
+# import mlflow
 import dspy
 import logging
 from dotenv import load_dotenv
@@ -29,6 +30,9 @@ logger = logging.getLogger(__name__)
 lm = dspy.LM(model=os.getenv("LM_MODEL"), api_base=os.getenv("LM_API_BASE"), api_key=os.getenv("LM_API_KEY"))
 dspy.configure(lm=lm)
 
+# mlflow.dspy.autolog()
+# mlflow.set_experiment("DSPy")
+
 # rag settings
 Settings.llm = None
 Settings.context_window = 10240 # maximum input size to the LLM
@@ -43,12 +47,12 @@ sources=os.getenv("DOC_SOURCES").split(",")
 def list_issues():
     issues = {}
     for issue in storage_svc.list_issue():
-        if issue.issue in issues:
-            ids = issues[issue.issue]
+        if issue.name in issues:
+            ids = issues[issue.name]
             ids.append(str(issue.id))
             continue
 
-        issues[issue.issue] = [str(issue.id)]
+        issues[issue.name] = [str(issue.id)]
     return issues.keys()
 
 # Evaluate retrieve, use the following indicators:
@@ -94,4 +98,3 @@ if __name__ == "__main__":
 
     for issue in question_cases:
         evaluate_retrieve(issue, True)
-        

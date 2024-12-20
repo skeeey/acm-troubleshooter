@@ -1,23 +1,23 @@
 # coding: utf-8
 
 from typing_extensions import TypedDict
+from models.chat import Record
 
 class GraphState(TypedDict):
     # docs
     doc_sources: list[str]
     relevant_docs: list[str]
     relevant_doc_names: list[str]
-    
-    # from user
-    issue: str
-    feedback: str
 
-    # from llm
+    # history records (input)
+    history_records: list[Record] 
+    
+    # from user (input)
+    query: str
+
+    # from llm (output)
     response: str
     reasoning: str
-    # TODO get the commands from response
-    # hub_commands: list[str]
-    # spoke_commands: list[str]
 
     # flags
     retrieval_times: int
@@ -28,22 +28,22 @@ def copy_state(state: GraphState) -> GraphState:
         doc_sources=state["doc_sources"],
         relevant_docs=state["relevant_docs"],
         relevant_doc_names=state["relevant_doc_names"],
-        issue=state["issue"],
-        feedback=state["feedback"],
+        history_records=state["history_records"],
+        query=state["query"],
         response=state["response"],
         reasoning=state["reasoning"],
         retrieval_times=state["retrieval_times"],
         terminated=state["terminated"],
     )
 
-def new_state(doc_sources: list[str], issue: str, response: str, feedback: str) -> GraphState:
+def new_state(doc_sources: list[str], query: str, history_records: list[Record]) -> GraphState:
     return GraphState(
         doc_sources=doc_sources,
         relevant_docs=[],
         relevant_doc_names=[],
-        issue=issue,
-        feedback=feedback,
-        response=response,
+        history_records=history_records,
+        query=query,
+        response="",
         reasoning="",
         retrieval_times=0,
         terminated=False,

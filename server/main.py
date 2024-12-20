@@ -11,20 +11,12 @@ from fastapi.responses import RedirectResponse
 from llama_index.core import Settings
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from models.contexts import LLMConfig, RetrievalConfig, Context
+from models.chat import Request, Response, EvaluationRequest
+from models.docs import RunBookSetRequest, RunBookSetResponse, RunBookSetVersion
 from services.llm import LLMService
 from services.index import RAGService
 from services.storage import StorageService
-from server.models import (
-    LLMConfig,
-    RetrievalConfig,
-    Context,
-    Request,
-    Response,
-    EvaluationRequest,
-    RunBookSetRequest,
-    RunBookSetResponse,
-    RunBookSetVersion,
-)
 from tasks.runbooks import index
 from tools.common import is_empty
 from tools.git import parse_repo, clone, pull, fetch_head_commit
@@ -76,50 +68,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/issues")
-async def resolve(req: Request) -> Response:
+@app.post("/chat")
+async def chat(req: Request) -> Response:
     issue_id = req.issue_id
 
-    # a new issue, create it and give an init response
-    if is_empty(issue_id):
-        if is_empty(req.user_inputs):
-            raise HTTPException(status_code=422, detail="the issue is required")
+    if is_empty(issue_id): # a new issue, create it and give an init response
+        if is_empty(req.query):
+            raise HTTPException(status_code=422, detail="the user inputs are required")
 
         ctx = req.context
         if ctx is None:
             ctx = Context(
-                llm_config=LLMConfig(model=llm_model, api_base=llm_api_base,api_key=llm_api_key),
+                llm_config=LLMConfig(model=llm_model, api_base=llm_api_base, api_key=llm_api_key),
                 retrieval_config=RetrievalConfig(doc_sources=doc_sources),
             )
 
-        issue = storage_svc.create_issue(req.user_inputs)
+        issue = storage_svc.create_issue(name=req.query)
         storage_svc.create_context(
             issue_id=issue.id,
             llm_cfg=ctx.llm_config.model_dump_json(),
             retrieval_cfg=ctx.retrieval_config.model_dump_json(),
         )
-        db_resp = storage_svc.create_resp(issue_id=issue.id)
+        
+        llm_resp = llm_svc.response(mcfg=ctx.llm_config, rcfg=ctx.retrieval_config, query=req.query, history_resps=[])
 
-        llm_resp = llm_svc.response(
-            mcfg=ctx.llm_config,
-            rcfg=ctx.retrieval_config,
-            issue=req.user_inputs,
+        db_resp = storage_svc.create_resp(
+            issue_id=issue.id,
+            user_query=req.query,
+            asst_resp=llm_resp["response"],
+            reasoning=llm_resp["reasoning"],
+            referenced_docs = llm_resp["relevant_doc_names"],
         )
-        db_resp.asst_resp = llm_resp["response"]
-        db_resp.reasoning = llm_resp["reasoning"]
-        db_resp.referenced_docs = llm_resp["relevant_doc_names"]
         
-        storage_svc.update_resp(db_resp)
-        
-        return Response(issue_id=str(issue.id), resp_id=str(db_resp.id),
-                        asst_resp=db_resp.asst_resp, reasoning=db_resp.reasoning,)
+        return Response(issue_id=str(db_resp.issue_id), resp_id=str(db_resp.id),
+                        resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
 
     # an existed issue, continue to resolve the issue with user's new inputs
-    if is_empty(req.last_resp_id):
-        raise HTTPException(status_code=422, detail="the last_asst_resp_id is required")
-    
-    if is_empty(req.user_inputs):
-        raise HTTPException(status_code=422, detail="the user resp is required")
+    if is_empty(req.query):
+        raise HTTPException(status_code=422, detail="the user inputs are required")
 
     ctx = storage_svc.find_context(uuid.UUID(issue_id))
     if ctx is None:
@@ -129,43 +115,35 @@ async def resolve(req: Request) -> Response:
     if issue is None:
         raise HTTPException(status_code=404, detail="the issue not found")
 
-    last_resp = storage_svc.get_resp(uuid.UUID(req.last_resp_id))
-    if last_resp is None:
-        raise HTTPException(status_code=404, detail="the last asst resp not found")
-
-    last_resp.user_resp = req.user_inputs
-    storage_svc.update_resp(last_resp)
-
-    db_resp = storage_svc.create_resp(issue_id=issue.id)
-
     llm_resp = llm_svc.response(
         mcfg=LLMConfig.model_validate_json(ctx.llm_config),
         rcfg=RetrievalConfig.model_validate_json(ctx.retrieval_config),
-        issue=issue.issue,
-        last_asst_resp=last_resp.asst_resp,
-        feedback=req.user_inputs,
+        query=req.query,
+        history_resps=storage_svc.list_resp(uuid.UUID(issue_id)),
     )
 
-    db_resp.asst_resp = llm_resp["response"]
-    db_resp.reasoning = llm_resp["reasoning"]
-    db_resp.referenced_docs = llm_resp["relevant_doc_names"]
+    db_resp = storage_svc.create_resp(
+        issue_id=issue_id,
+        user_query=req.query,
+        asst_resp=llm_resp["response"],
+        reasoning=llm_resp["reasoning"],
+        referenced_docs = llm_resp["relevant_doc_names"],
+    )
     
-    storage_svc.update_resp(db_resp)
-    
-    return Response(issue_id=str(issue.id), resp_id=str(db_resp.id),
-                    asst_resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
+    return Response(issue_id=str(db_resp.issue_id), resp_id=str(db_resp.id),
+                    resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
 
-@app.put("/issues/{issue_id}/evaluation/{resp_id}")
-async def evaluate(issue_id: str, resp_id: str, req: EvaluationRequest):
-    issue = storage_svc.get_issue(uuid.UUID(issue_id))
+@app.put("/evaluation")
+async def evaluate(req: EvaluationRequest):
+    issue = storage_svc.get_issue(uuid.UUID(req.issue_id))
     if issue is None:
         raise HTTPException(status_code=404, detail="the issue not found")
 
-    resp = storage_svc.get_resp(uuid.UUID(resp_id))
+    resp = storage_svc.get_resp(uuid.UUID(req.resp_id))
     if resp is None:
-        raise HTTPException(status_code=404, detail="the step not found")
-
-    storage_svc.evaluate(uuid.UUID(issue_id), uuid.UUID(resp_id), req.score, req.feedback)
+        raise HTTPException(status_code=404, detail="the responses not found")
+    
+    storage_svc.evaluate(issue.id, resp.id, req.score, req.feedback)
 
 @app.get("/runbooksets")
 async def list_runbook_sets():

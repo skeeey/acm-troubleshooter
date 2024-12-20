@@ -12,17 +12,15 @@ class Context(SQLModel, table=True):
 
 class Issue(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    issue: str
+    name: str
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 class Response(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_query: str | None = None
     asst_resp: str | None = None
     reasoning: str | None = None
     referenced_docs: list[str] | None = Field(default=None, sa_column=Column(JSON))
-    user_resp: str | None = None
-    hub_commands: list[str] | None = Field(default=None, sa_column=Column(JSON))
-    spoke_commands: list[str] | None = Field(default=None, sa_column=Column(JSON))
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     update_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -70,13 +68,13 @@ class StorageService:
             results = session.exec(statement)
             return results.first()
 
-    def create_issue(self, issue: str) -> Issue:
-        issue = Issue(issue=issue)
+    def create_issue(self, name: str) -> Issue:
+        name = Issue(name=name)
         with Session(self.engine) as session:
-            session.add(issue)
+            session.add(name)
             session.commit()
-            session.refresh(issue)
-            return issue
+            session.refresh(name)
+            return name
     
     def get_issue(self, id: uuid.UUID) -> Issue:
         with Session(self.engine) as session:
@@ -85,25 +83,26 @@ class StorageService:
     def list_issue(self) -> list[Issue]:
         with Session(self.engine) as session:
             return session.exec(statement=select(Issue), execution_options={"prebuffer_rows": True})
-    
-    def create_resp(self, issue_id: uuid.UUID) -> Response:
-        resp = Response(issue_id=issue_id)
+
+    def create_resp(self, issue_id:str, user_query: str, asst_resp: str, reasoning: str, referenced_docs: list[str]):
+        resp = Response(user_query=user_query, asst_resp=asst_resp,
+                        reasoning=reasoning, referenced_docs=referenced_docs,
+                        issue_id=issue_id)
         with Session(self.engine) as session:
             session.add(resp)
             session.commit()
             session.refresh(resp)
             return resp
-
-    def update_resp(self, updated: Response):
-        with Session(self.engine) as session:
-            session.add(updated)
-            session.commit()
-            session.refresh(updated)
     
     def get_resp(self, id: uuid.UUID) -> Response:
         with Session(self.engine) as session:
             return session.get(Response, id)
     
+    def list_resp(self, issue_id: uuid.UUID) -> list[Response]:
+        with Session(self.engine) as session:
+            statement = select(Response).where(Response.issue_id == issue_id).order_by(Response.create_at)
+            return session.exec(statement=statement, execution_options={"prebuffer_rows": True})
+
     def evaluate(self, issue_id: uuid.UUID, resp_id: uuid.UUID, score: int, feedback: str = None):
         evaluation = Evaluation(score=score, feedback=feedback, issue_id=issue_id, resp_id=resp_id)
         with Session(self.engine) as session:

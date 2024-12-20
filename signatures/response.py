@@ -2,31 +2,30 @@
 
 import logging
 import dspy
+from models.chat import Record
 from prompts.templates import RESPONSE_NOTICES
 
 logger = logging.getLogger(__name__)
 
 class Response(dspy.Signature):
-    """Provide a response for the ACM issue based on the previous responses, user feedback, and relevant documents.
+    """As an AI ACM assistant, you respond to the user's ACM query.
     """
 
     notices: str = dspy.InputField(desc="Notices for providing the response.")
     documents: list[str] = dspy.InputField(desc="The relevant documents.")
-    issue: str = dspy.InputField()
+    history_records: list[Record] = dspy.InputField(desc="The previous history records.", default=[])
 
-    previous_responses: str = dspy.InputField(desc="The previous responses.", default="")
-    user_feedback: str = dspy.InputField(desc="The user feedback.", default="")
-    
+    query: str = dspy.InputField()
+
     response: str = dspy.OutputField()
 
-def respond(documents: list[str], issue: str, previous_responses = "", user_feedback="", notices=RESPONSE_NOTICES):
+def respond(documents: list[str], query: str, history_records: list[Record], notices=RESPONSE_NOTICES):
     resp = dspy.ChainOfThought(Response)
     result = resp(
         notices=notices,
         documents=documents,
-        issue=issue,
-        previous_responses=previous_responses,
-        user_feedback=user_feedback,
+        query=query,
+        history_records=history_records,
     )
     logger.debug(result)
     return result

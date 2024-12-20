@@ -30,7 +30,6 @@ class Grader(dspy.Signature):
     question: str = dspy.InputField()
     answer: str = dspy.InputField()
 
-    # reasoning: str = dspy.OutputField()
     score: int = dspy.OutputField(default=0)
 
 def convert_question(contexts: str, query: str, notices=CONVERTOR_NOTICES) -> str:

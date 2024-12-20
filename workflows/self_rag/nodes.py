@@ -13,19 +13,15 @@ def retrieve_func(rag_svc: RAGService):
     def retrieve(state):
         current_state = copy_state(state)
 
-        issue = current_state["issue"]
         sources = current_state["doc_sources"]
         retrieval_times = current_state["retrieval_times"]
-        feedback = current_state["feedback"]
-
-        query = issue
-        if not is_empty(feedback):
-            query = feedback
+        query = current_state["query"]
 
         nodes = rag_svc.retrieve(query=query, sources=sources)
         if len(nodes) == 0:
+            # TODO may need contexts (current_state["history_records"]) for new query
             new_query = convert_question(contexts={}, query=query)
-            logger.info("no relevant nodes for query: %s, generate a new query", query, new_query)
+            logger.info("no relevant nodes for query: %s, generate a new query: %s", query, new_query)
             nodes = rag_svc.retrieve(query=new_query, sources=sources)
             if len(nodes) == 0:
                 logger.warning("no relevant nodes for query: %s", new_query)
@@ -52,12 +48,11 @@ def answer_func():
         current_state = copy_state(state)
 
         documents = current_state["relevant_docs"]
-        previous_resp = current_state["response"]
-        issue = current_state["issue"]
-        feedback = current_state["feedback"]
+        query = current_state["query"]
+        history_records = current_state["history_records"]
         
-        result = respond(documents=documents, issue=issue,
-                         previous_responses=previous_resp, user_feedback=feedback)
+        # TODO (optimize) check the token size of the documents and history to limit the context 
+        result = respond(documents=documents, query=query, history_records=history_records)
         
         current_state["response"] = result.response
         current_state["reasoning"] = result.reasoning

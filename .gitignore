@@ -12,4 +12,6 @@ build
 dist
 troubleshooter.spec
 
+mlruns
+
 *.password
