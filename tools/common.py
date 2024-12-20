@@ -52,3 +52,12 @@ def run_commands(cmds, cwd, timeout):
         return CMDResult(return_code=124, stdout='', stderr='timeout')
 
     return CMDResult(return_code=result.returncode, stdout=result.stdout, stderr=result.stderr)
+
+if __name__ == '__main__':
+    assert is_empty('')
+    assert is_empty('""')
+    assert is_empty('    ')
+    assert is_empty('"')
+    assert is_empty('" "')
+    assert not is_empty('a')
+    assert not is_empty('"a"')

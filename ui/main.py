@@ -1,6 +1,10 @@
 # coding: utf-8
 
-# pylint: disable=wrong-import-position,pointless-string-statement,missing-module-docstring
+# pylint: disable=wrong-import-position,pointless-string-statement
+
+"""
+The UI of ACM troubleshooter service
+"""
 
 import os
 import logging
