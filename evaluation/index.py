@@ -6,7 +6,7 @@ Evaluate the retrieve and rerank
 
 import os
 import time
-# import mlflow
+import mlflow
 import dspy
 import logging
 from dotenv import load_dotenv
@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 lm = dspy.LM(model=os.getenv("LM_MODEL"), api_base=os.getenv("LM_API_BASE"), api_key=os.getenv("LM_API_KEY"))
 dspy.configure(lm=lm)
 
-# mlflow.dspy.autolog()
-# mlflow.set_experiment("DSPy")
+mlflow.dspy.autolog()
+mlflow.set_experiment("DSPy")
 
 # rag settings
 Settings.llm = None
