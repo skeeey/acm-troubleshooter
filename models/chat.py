@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The models of chat
+"""
+
 from pydantic import BaseModel
 from models.contexts import Context
 

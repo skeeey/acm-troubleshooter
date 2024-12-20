@@ -1,12 +1,16 @@
 # coding: utf-8
 
+"""
+Evaluate the retrieve and rerank
+"""
+
 import os
 import time
 # import mlflow
 import dspy
 import logging
 from dotenv import load_dotenv
-from llama_index.core import Settings 
+from llama_index.core import Settings
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from signatures.retriever import convert_question, grade_relevant_nodes
@@ -14,7 +18,7 @@ from services.index import RAGService
 from services.storage import StorageService
 from tools.embeddings.huggingface import BGE
 from tools.common import is_empty
-from evaluation.cases import *
+from evaluation.cases import irrelevant_cases, cluster_cases, addon_cases, question_cases
 
 # load envs
 load_dotenv()
@@ -59,42 +63,46 @@ def list_issues():
 # - Relevancy
 # - TODO Faithfulness (hallucinations, add expected results or use an advanced LLM)
 # - Response Time
-def evaluate_retrieve(issue, with_converter=False):
-    retrieve(issue)
-
+def evaluate_retrieve(issue, with_converter=False, with_grade=False):
+    retrieve(issue, with_grade)
     if with_converter:
         new_issue = convert_question("", issue)
-        retrieve(new_issue)
+        retrieve(new_issue, with_grade)
 
-def retrieve(query):
+def retrieve(query, with_grade=False):
     print("==============")
     print("issue:", query)
     if is_empty(query):
         return
-    
+
     start_time = time.time()
     nodes = rag_svc.retrieve(query=query, sources=sources)
     r_elapsed_time = time.time() - start_time
+    print(f"retrieved time used {r_elapsed_time:.3f}")
+    print(f"retrieved nodes:{len(nodes)}")
+    for n in nodes:
+        print(f"{n.score:.3f}, {n.metadata["filename"]}")
+
+    if not with_grade:
+        return
 
     start_time = time.time()
     relevant_nodes = grade_relevant_nodes(nodes, query)
     g_elapsed_time = time.time() - start_time
-
-    print("retrieved time used %.3fs" % r_elapsed_time)
-    print("grade time used %.3fs" % g_elapsed_time)
-    print("retrieved nodes:", len(nodes))
-    for n in nodes:
-        print("%.3f, %s" % (n.score, n.metadata["filename"]))
+    print(f"grade time used {g_elapsed_time:.3f}")
     print("relevant nodes:", len(relevant_nodes))
     for rn in relevant_nodes:
-        print("%d, %.3f, %s" % (rn.score, rn.node.score, rn.node.metadata["filename"]))
+        print(f"{rn.score}, {rn.node.score:.3f}, {rn.node.metadata["filename"]}")
 
 if __name__ == "__main__":
-    # for issue in irrelevant_cases:
-    #     evaluate_retrieve(issue, True)
-    
-    # for issue in cluster_cases:
-    #     evaluate_retrieve(issue)
+    for case in irrelevant_cases:
+        evaluate_retrieve(case)
 
-    for issue in question_cases:
-        evaluate_retrieve(issue, True)
+    for case in cluster_cases:
+        evaluate_retrieve(case)
+
+    for case in addon_cases:
+        evaluate_retrieve(case)
+
+    for case in question_cases:
+        evaluate_retrieve(case, True)

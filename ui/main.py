@@ -1,5 +1,7 @@
 # coding: utf-8
 
+# pylint: disable=wrong-import-position,pointless-string-statement,missing-module-docstring
+
 import os
 import logging
 import requests
@@ -20,24 +22,26 @@ logger = logging.getLogger(__name__)
 # server settings
 server_url = "http://127.0.0.1:8000"
 
-def send_req(req: Request) -> Response:
-    resp = requests.post(f"{server_url}/chat", data=req.model_dump_json())
-    if resp.status_code == 200:
-        return Response.model_validate_json(resp.content), None
-    
-    return None, f"failed to response, err=({resp.status_code}, {resp.content})"
+def send_req(chat_req: Request) -> Response:
+    http_resp = requests.post(f"{server_url}/chat", data=chat_req.model_dump_json(), timeout=300)
+    if http_resp.status_code == 200:
+        return Response.model_validate_json(http_resp.content), None
 
-def send_feedback(req: EvaluationRequest):
-    resp = requests.put(f"{server_url}/evaluation", data=req.model_dump_json())
-    if resp.status_code == 200:
+    return None, f"failed to response, err=({http_resp.status_code}, {http_resp.content})"
+
+def send_feedback(eval_req: EvaluationRequest):
+    http_resp = requests.put(f"{server_url}/evaluation", data=eval_req.model_dump_json(), timeout=300)
+    if http_resp.status_code == 200:
         return None
-    
+
     logger.error("failed to send (score=%d, feedback=%s) for issue %s-%s, err=(%d,%s)",
-                 req.score, req.feedback, req.issue_id, req.resp_id, resp.status_code, resp.content)
+                 eval_req.score, eval_req.feedback,
+                 eval_req.issue_id, eval_req.resp_id,
+                 http_resp.status_code, http_resp.content)
     return None
 
-def show_asst_resp(resp: Response):
-    md = ["##### Reasoning", resp.reasoning, "##### Response", resp.resp]    
+def show_asst_resp(chat_resp: Response):
+    md = ["##### Reasoning", chat_resp.reasoning, "##### Response", chat_resp.resp]
     st.markdown("\n".join(md))
 
 # start the web page
@@ -60,6 +64,7 @@ REMOVE_PADDING_FROM_SIDES="""
 st.markdown(REMOVE_PADDING_FROM_SIDES, unsafe_allow_html=True)
 
 st.title("🤖 ACM Assistant")
+
 """
 I'm an ACM assistant. I can help you to troubleshoot the ACM issues, for example,
 troubleshoot why the status of the cluster cluster-a is unknown, or
@@ -81,7 +86,7 @@ if "response" not in st.session_state:
     st.session_state["response"] = None
 
 messages = st.session_state.messages
-for msg in messages: 
+for msg in messages:
     if msg["role"] == "assistant":
         with st.chat_message(msg["role"], avatar= "🤖"):
             if isinstance(msg["content"], Response):
@@ -97,7 +102,7 @@ if prompt := st.chat_input(placeholder="Message ACM Assistant"):
         st.session_state.clear()
         st.empty()
         st.rerun()
-    
+
     messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar="👨‍💻"):
         st.markdown(prompt)
@@ -106,12 +111,12 @@ if prompt := st.chat_input(placeholder="Message ACM Assistant"):
         req = Request(query=prompt)
         if st.session_state["response"] is not None:
             req.issue_id = st.session_state["response"].issue_id
-        
-        resp, err = send_req(req=req)
+
+        resp, err = send_req(chat_req=req)
         if err is not None:
             st.error(err)
             st.stop()
-        
+
         st.session_state["response"] = resp
         with st.chat_message("assistant", avatar="🤖"):
             messages.append({"role": "assistant", "content": st.session_state["response"]})
@@ -123,12 +128,13 @@ if st.session_state["response"]:
         optional_text_label="[Optional] Please provide an explanation",
         key=f"feedback_{len(messages)}",
     )
+
     if feedback:
         issue_id = st.session_state["response"].issue_id
         resp_id = st.session_state["response"].resp_id
-        score = -1 
+        score = -1
         if feedback["score"] == "👍":
             score = 1
-        
+
         send_feedback(EvaluationRequest(issue_id=issue_id, resp_id=resp_id, score=score, feedback=feedback["text"]))
         st.toast("Thanks your feedback!", icon="🙏")

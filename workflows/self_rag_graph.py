@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The self RAG workflow
+"""
+
 from langgraph.graph import END, StateGraph, START
 from services.index import RAGService
 from workflows.self_rag.state import GraphState

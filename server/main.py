@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The server of ACM troubleshooter service
+"""
+
 import logging
 import os
 import shutil
@@ -89,7 +93,7 @@ async def chat(req: Request) -> Response:
             llm_cfg=ctx.llm_config.model_dump_json(),
             retrieval_cfg=ctx.retrieval_config.model_dump_json(),
         )
-        
+
         llm_resp = llm_svc.response(mcfg=ctx.llm_config, rcfg=ctx.retrieval_config, query=req.query, history_resps=[])
 
         db_resp = storage_svc.create_resp(
@@ -99,7 +103,6 @@ async def chat(req: Request) -> Response:
             reasoning=llm_resp["reasoning"],
             referenced_docs = llm_resp["relevant_doc_names"],
         )
-        
         return Response(issue_id=str(db_resp.issue_id), resp_id=str(db_resp.id),
                         resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
 
@@ -129,7 +132,6 @@ async def chat(req: Request) -> Response:
         reasoning=llm_resp["reasoning"],
         referenced_docs = llm_resp["relevant_doc_names"],
     )
-    
     return Response(issue_id=str(db_resp.issue_id), resp_id=str(db_resp.id),
                     resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
 
@@ -142,7 +144,7 @@ async def evaluate(req: EvaluationRequest):
     resp = storage_svc.get_resp(uuid.UUID(req.resp_id))
     if resp is None:
         raise HTTPException(status_code=404, detail="the responses not found")
-    
+
     storage_svc.evaluate(issue.id, resp.id, req.score, req.feedback)
 
 @app.get("/runbooksets")
@@ -154,11 +156,11 @@ async def list_runbook_sets():
         )
     return rs_list
 
-@app.get("/runbooksets/{id}")
-async def get_runbook_set(id: str):
-    rs = storage_svc.get_runbook_set(uuid.UUID(id))
+@app.get("/runbooksets/{runbook_set_id}")
+async def get_runbook_set(runbook_set_id: str):
+    rs = storage_svc.get_runbook_set(uuid.UUID(runbook_set_id))
     if rs is None:
-        raise HTTPException(status_code=404, detail=f"the runbook set not found")
+        raise HTTPException(status_code=404, detail="the runbook set not found")
 
     versions = []
     rsvs = storage_svc.list_runbook_set_versions(rs.id)
@@ -180,7 +182,7 @@ async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: Backgro
             raise HTTPException(
                 status_code=500, detail="the runbook set repo dir not found"
             )
-        
+
         # update the repo
         pull_result = pull(cwd=repo_dir)
         if pull_result.return_code != 0:
@@ -190,13 +192,13 @@ async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: Backgro
         fetch_result = fetch_head_commit(cwd=repo_dir)
         if fetch_result.return_code != 0:
             raise HTTPException(status_code=500, detail=fetch_result.stderr)
-        
+
         version = fetch_result.stdout
         rsv = storage_svc.find_runbook_set_version(version=version)
         if rsv is not None:
-            # TODO if rsv status is failed, try to reindex 
+            # TODO if rsv status is failed, try to reindex
             return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
-        
+
         bg_tasks.add_task(index, rs.id, repo_dir, version, rag_svc, storage_svc)
         return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
 
@@ -217,11 +219,11 @@ async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: Backgro
     bg_tasks.add_task(index, new_rs.id, repo_dir, version, rag_svc, storage_svc)
     return RedirectResponse(status_code=303, url=f"/runbooksets/{str(new_rs.id)}")
 
-@app.delete("/runbooksets/{id}")
-async def delete_runbook_sets(id: str):
-    rs = storage_svc.get_runbook_set(uuid.UUID(id))
+@app.delete("/runbooksets/{runbook_set_id}")
+async def delete_runbook_sets(runbook_set_id: str):
+    rs = storage_svc.get_runbook_set(uuid.UUID(runbook_set_id))
     if rs is None:
-        raise HTTPException(status_code=404, detail=f"the runbook set not found")
+        raise HTTPException(status_code=404, detail="the runbook set not found")
 
     dist = f"{parse_repo(rs.repo)}-{rs.branch}"
     repo_dir = os.path.join(cwd, dist)

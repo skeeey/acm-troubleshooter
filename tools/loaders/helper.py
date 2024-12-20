@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The helper functions for load files
+"""
+
 import os
 import logging
 import hashlib
@@ -13,11 +17,11 @@ logger = logging.getLogger(__name__)
 def list_files(start_path, exclude_list, suffix):
     file_list = []
     for root, dirs, files in os.walk(start_path):
-        dirs[:] = [d for d in dirs if not d == '.git']
-        
+        dirs[:] = [d for d in dirs if not d == ".git"]
+
         if os.path.basename(root) in exclude_list:
             continue
-        
+
         for f in files:
             if f.endswith(suffix) and f not in exclude_list:
                 file_list.append(os.path.join(root, f))
@@ -51,7 +55,6 @@ def to_docs(files, source, envs=None, partition=False, chunk_size=2048):
         }
 
         docs.append(doc)
-        
     return docs
 
 def do_partition(f, source, doc_envs=None):
@@ -59,7 +62,7 @@ def do_partition(f, source, doc_envs=None):
     for doc in docs:
         if doc_envs is not None:
             doc.text = set_envs(doc_envs, doc.text)
-        
+
         doc.metadata = {
             "filename": f,
             "hash": hashlib.md5(doc.text.encode()).hexdigest(),

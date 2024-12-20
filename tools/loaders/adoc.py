@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+Load adoc files
+"""
+
 import os
 import logging
 import shutil
@@ -43,7 +47,7 @@ acm_docs_attrs = {
 logger = logging.getLogger(__name__)
 
 def convert_adoc_to_md(adoc_file, output_file):
-    cmds = ['npx', 'downdoc', '--output', output_file, adoc_file]
+    cmds = ["npx", "downdoc", "--output", output_file, adoc_file]
     convert_result = run_commands(cmds=cmds, cwd=None, timeout=120)
     if convert_result.return_code != 0:
         raise RuntimeError(f"failed to convert adoc docs, {convert_result.stderr}")
@@ -53,22 +57,22 @@ def mk_output_dir(output_dir):
         shutil.rmtree(output_dir)
     os.mkdir(output_dir)
 
-def load_acm_docs(dir: str, source: str, exclude_list=None) -> list[Document]:
+def load_acm_docs(adoc_dir: str, source: str, exclude_list=None) -> list[Document]:
     if exclude_list is None:
         exclude_list = ["apis", "api", "README.adoc", "SECURITY.adoc", "EXTERNAL_CONTRIBUTING.adoc",
                         ".asciidoctorconfig.adoc", "common-attributes.adoc", "main.adoc", "master.adoc"]
 
-    parent_dir = os.path.dirname(dir)
-    md_dir = os.path.join(parent_dir, f"{os.path.basename(dir)}-md")
+    parent_dir = os.path.dirname(adoc_dir)
+    md_dir = os.path.join(parent_dir, f"{os.path.basename(adoc_dir)}-md")
 
     # prepare markdown output dir
     mk_output_dir(md_dir)
 
     # convert adoc to markdown
-    for f in list_files(dir, exclude_list, ".adoc"):
+    for f in list_files(adoc_dir, exclude_list, ".adoc"):
         logger.info("convert adoc %s", f)
-        convert_adoc_to_md(f, os.path.join(md_dir, f.replace(dir, "").replace("/", "_")[1:]) + ".md")
-    
+        convert_adoc_to_md(f, os.path.join(md_dir, f.replace(adoc_dir, "").replace("/", "_")[1:]) + ".md")
+
     mce_troubleshooting_docs = set()
     acm_troubleshooting_docs = set()
     acm_docs = set()
@@ -89,16 +93,16 @@ def load_acm_docs(dir: str, source: str, exclude_list=None) -> list[Document]:
             continue
 
         acm_docs.add(f)
-    
+
     # remove the repetitive docs
     for f in mce_troubleshooting_docs:
         name = f.replace("clusters_support_", "").replace("_mce", "")
         if "must_gather" in name:
-                continue
+            continue
 
         if name in acm_troubleshooting_docs:
             acm_troubleshooting_docs.remove(name)
-    
+
     docs = []
     docs.extend(to_docs(mce_troubleshooting_docs, source, acm_docs_attrs))
     docs.extend(to_docs(acm_troubleshooting_docs, source, acm_docs_attrs))

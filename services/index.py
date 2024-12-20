@@ -1,5 +1,11 @@
 # coding: utf-8
 
+# pylint: disable=missing-class-docstring
+
+"""
+The service to index the docs
+"""
+
 import logging
 import time
 from llama_index.core import VectorStoreIndex
@@ -55,7 +61,7 @@ class RAGService:
         self.similarity_top_k = top_k
         self.rerank_top_n = top_n
         self.hnsw_ef_search = hnsw_ef_search
-    
+
     def index_docs(self, docs: list[Document]):
         if len(docs) == 0:
             raise ValueError("there is no product docs or runbooks")
@@ -80,7 +86,8 @@ class RAGService:
             ],
             condition="and",
         ))
-        logger.info("docs (source=%s, total=%d) listed, time used %.3fs", source, len(nodes), (time.time() - start_time))
+        logger.info("docs (source=%s, total=%d) listed, time used %.3fs",
+                    source, len(nodes), (time.time() - start_time))
 
         docs = []
         for node in nodes:
@@ -96,10 +103,10 @@ class RAGService:
     def retrieve(self, query: str, sources: list[str]=None) -> list[NodeWithScore]:
         if is_empty(query):
             return []
-        
+
         if sources is None:
             raise ValueError("sources are required")
-        
+
         metadata_filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="source", value=sources, operator="in"),
@@ -121,9 +128,9 @@ class RAGService:
                     len(response.source_nodes), self.similarity_top_k, (time.time() - start_time))
         if logger.isEnabledFor(logging.DEBUG):
             for node in response.source_nodes:
-                logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
-        
-        # similarity cutoff 
+                logger.debug("-- doc: [%.3f] %s", node.score, node.metadata["filename"])
+
+        # similarity cutoff
         processor = SimilarityPostprocessor(similarity_cutoff=self.similarity_cutoff)
         filtered_nodes = processor.postprocess_nodes(response.source_nodes)
         logger.info("filtered nodes (total=%d, cutoff=%0.2f)",
@@ -132,7 +139,7 @@ class RAGService:
             return []
         if logger.isEnabledFor(logging.DEBUG):
             for node in filtered_nodes:
-                logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
+                logger.debug("-- doc: [%.3f] %s", node.score, node.metadata["filename"])
 
         # rerank
         start_time = time.time()
@@ -142,7 +149,7 @@ class RAGService:
                     len(reranked_nodes), self.rerank_top_n, (time.time() - start_time))
         if logger.isEnabledFor(logging.DEBUG):
             for node in reranked_nodes:
-                logger.debug("-- doc: [%.3f] %s" % (node.score, node.metadata["filename"]))
+                logger.debug("-- doc: [%.3f] %s", node.score, node.metadata["filename"])
 
         nodes = []
         for node in reranked_nodes:

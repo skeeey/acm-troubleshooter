@@ -1,5 +1,11 @@
 # coding: utf-8
 
+# pylint: disable=missing-class-docstring
+
+"""
+The service to store the chat records
+"""
+
 import uuid
 from datetime import datetime, timezone
 from sqlmodel import Column, JSON, SQLModel, Session, Field, create_engine, select
@@ -49,7 +55,7 @@ class RunbookSetVersion(SQLModel, table=True):
     state: str
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     runbook_set_id: uuid.UUID = Field(nullable=False, foreign_key="runbookset.id", ondelete="CASCADE")
-    
+
 class StorageService:
     def __init__(self, db_url: str):
         engine = create_engine(url=db_url, echo=False)
@@ -61,7 +67,7 @@ class StorageService:
         with Session(self.engine) as session:
             session.add(ctx)
             session.commit()
-    
+
     def find_context(self, issue_id: uuid.UUID) -> Context:
         with Session(self.engine) as session:
             statement = select(Context).where(Context.issue_id == issue_id)
@@ -75,11 +81,11 @@ class StorageService:
             session.commit()
             session.refresh(name)
             return name
-    
-    def get_issue(self, id: uuid.UUID) -> Issue:
+
+    def get_issue(self, uid: uuid.UUID) -> Issue:
         with Session(self.engine) as session:
-            return session.get(Issue, id)
-    
+            return session.get(Issue, uid)
+
     def list_issue(self) -> list[Issue]:
         with Session(self.engine) as session:
             return session.exec(statement=select(Issue), execution_options={"prebuffer_rows": True})
@@ -93,11 +99,11 @@ class StorageService:
             session.commit()
             session.refresh(resp)
             return resp
-    
-    def get_resp(self, id: uuid.UUID) -> Response:
+
+    def get_resp(self, uid: uuid.UUID) -> Response:
         with Session(self.engine) as session:
-            return session.get(Response, id)
-    
+            return session.get(Response, uid)
+
     def list_resp(self, issue_id: uuid.UUID) -> list[Response]:
         with Session(self.engine) as session:
             statement = select(Response).where(Response.issue_id == issue_id).order_by(Response.create_at)
@@ -108,7 +114,7 @@ class StorageService:
         with Session(self.engine) as session:
             session.add(evaluation)
             session.commit()
-    
+
     def create_runbook_set(self, repo: str, branch: str) -> RunbookSet:
         runbook_set = RunbookSet(repo=repo, branch=branch)
         with Session(self.engine) as session:
@@ -116,22 +122,22 @@ class StorageService:
             session.commit()
             session.refresh(runbook_set)
             return runbook_set
-        
+
     def delete_runbook_set(self, runbook_set: RunbookSet):
         with Session(self.engine) as session:
             session.delete(runbook_set)
             session.commit()
-    
-    def get_runbook_set(self, id: uuid.UUID) -> RunbookSet:
+
+    def get_runbook_set(self, uid: uuid.UUID) -> RunbookSet:
         with Session(self.engine) as session:
-            return session.get(RunbookSet, id)
-    
+            return session.get(RunbookSet, uid)
+
     def list_runbook_set(self) -> list[RunbookSet]:
         with Session(self.engine) as session:
             return session.exec(statement=select(RunbookSet), execution_options={"prebuffer_rows": True})
-    
+
     def find_runbook_set(self, repo: str, branch: str) -> RunbookSet:
-         with Session(self.engine) as session:
+        with Session(self.engine) as session:
             statement = select(RunbookSet).where(RunbookSet.repo == repo, RunbookSet.branch == branch)
             results = session.exec(statement)
             return results.first()
@@ -143,20 +149,22 @@ class StorageService:
             session.commit()
             session.refresh(rsv)
             return rsv
-    
+
     def update_runbook_set_version(self, rsv: RunbookSetVersion):
         with Session(self.engine) as session:
             session.add(rsv)
             session.commit()
-    
+
     def find_runbook_set_version(self, version: str) -> RunbookSetVersion:
-         with Session(self.engine) as session:
+        with Session(self.engine) as session:
             statement = select(RunbookSetVersion).where(RunbookSetVersion.version == version)
             results = session.exec(statement)
             return results.first()
-    
+
     def list_runbook_set_versions(self, rs_id: uuid.UUID) -> list[RunbookSetVersion]:
-         with Session(self.engine) as session:
-            statement = select(RunbookSetVersion).where(RunbookSetVersion.runbook_set_id == rs_id).order_by(RunbookSetVersion.create_at)
+        with Session(self.engine) as session:
+            statement = select(RunbookSetVersion).\
+                where(RunbookSetVersion.runbook_set_id == rs_id).\
+                order_by(RunbookSetVersion.create_at)
             results = session.exec(statement=statement, execution_options={"prebuffer_rows": True})
             return results

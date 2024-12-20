@@ -4,6 +4,10 @@ SHELL:=/bin/bash
 deps:
 	pip install -r requirements.txt
 
+.PHONY: lint
+lint:
+	pylint **/*.py
+
 .PHONY: run-pgvector
 run-pgvector:
 	hack/run_pgvector.sh

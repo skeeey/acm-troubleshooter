@@ -1,17 +1,25 @@
 # coding: utf-8
 
+"""
+The state for RAG workflow
+"""
+
 from typing_extensions import TypedDict
 from models.chat import Record
 
 class GraphState(TypedDict):
+    """
+    The state for RAG workflow
+    """
+
     # docs
     doc_sources: list[str]
     relevant_docs: list[str]
     relevant_doc_names: list[str]
 
     # history records (input)
-    history_records: list[Record] 
-    
+    history_records: list[Record]
+
     # from user (input)
     query: str
 

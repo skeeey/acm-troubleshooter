@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The templates of prompt
+"""
+
 COMMON_NOTICES = """
 - ACM or RHACM stands for Red Hat Advanced Cluster Management for Kubernetes.
 - The term "hub" stands for to the ACM Hub.

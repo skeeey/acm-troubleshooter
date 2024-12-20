@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The common helper functions
+"""
+
 import os
 import re
 import subprocess
@@ -14,7 +18,7 @@ class CMDResult(BaseModel):
 def is_empty(s: str) -> bool:
     if not s:
         return True
-    
+
     striped = replace_start(s, '"', '')
     striped = replace_end(striped, '"', '')
 
@@ -29,7 +33,7 @@ def replace_start(s: str, old_value: str, new_value: str):
 def replace_end(s: str, old_value: str, new_value: str):
     return re.sub(f'{old_value}$', new_value, s)
 
-def count_tokens(text, encoding_name="cl100k_base"):
+def count_tokens(text, encoding_name='cl100k_base'):
     encoding = tiktoken.get_encoding(encoding_name)
     return len(encoding.encode(text))
 
@@ -42,8 +46,9 @@ def run_commands(cmds, cwd, timeout):
             text=True,
             timeout=float(timeout),
             env=os.environ.copy(),
+            check=False,
         )
     except subprocess.TimeoutExpired:
-        return CMDResult(return_code=124, stdout="", stderr="timeout")
-    
+        return CMDResult(return_code=124, stdout='', stderr='timeout')
+
     return CMDResult(return_code=result.returncode, stdout=result.stdout, stderr=result.stderr)

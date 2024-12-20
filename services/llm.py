@@ -1,5 +1,11 @@
 # coding: utf-8
 
+# pylint: disable=missing-class-docstring
+
+"""
+The service to invoke the LLM
+"""
+
 import dspy
 import logging
 from models.contexts import LLMConfig, RetrievalConfig

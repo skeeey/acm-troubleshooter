@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+Load JIRA issues
+"""
+
 from jira import JIRA
 from llama_index.core.schema import Document
 
@@ -8,7 +12,7 @@ def load_jira_issues(api_token: str, query: str, server="https://issues.redhat.c
         "server": server,
         "headers": {"Authorization": f"Bearer {api_token}"},
     }
-    
+
     jira = JIRA(options=options)
 
     issues = jira.search_issues(query)

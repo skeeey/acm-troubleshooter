@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The models of doc
+"""
+
 from pydantic import BaseModel
 
 class RunBookSetVersion(BaseModel):

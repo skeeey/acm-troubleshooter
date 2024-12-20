@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The models of chat context
+"""
+
 from pydantic import BaseModel
 
 class LLMConfig(BaseModel):

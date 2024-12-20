@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The retriever dspy signatures
+"""
+
 import dspy
 import logging
 from llama_index.core.schema import NodeWithScore
@@ -17,7 +21,7 @@ class Convertor(dspy.Signature):
     """
 
     notices: str = dspy.InputField(desc="Notices for converting the query.")
-    contexts: dict[str, str] = dspy.InputField(desc="Contexts for the query.", default={}) 
+    contexts: dict[str, str] = dspy.InputField(desc="Contexts for the query.", default={})
     query: str = dspy.InputField()
 
     new_query: str = dspy.OutputField()
@@ -26,7 +30,7 @@ class Grader(dspy.Signature):
     """Assess the relevance of the answer to the question. 
     Give a score from 0 to 10. 10 means most relevant and 0 means least relevant."
     """
-    
+
     question: str = dspy.InputField()
     answer: str = dspy.InputField()
 
@@ -40,7 +44,7 @@ def convert_question(contexts: str, query: str, notices=CONVERTOR_NOTICES) -> st
 def grade_relevant_nodes(nodes: list[NodeWithScore], question: str, relevant_cutoff=5) -> list[RelevantNode]:
     if len(nodes) == 0:
         return []
-    
+
     relevant_nodes = []
     for node in nodes:
         grade = dspy.ChainOfThought(Grader)
@@ -54,6 +58,6 @@ def grade_relevant_nodes(nodes: list[NodeWithScore], question: str, relevant_cut
             continue
 
         relevant_nodes.append(RelevantNode(node=node, score=score))
-    
+
     relevant_nodes.sort(key=lambda n: n.score, reverse=True)
     return relevant_nodes

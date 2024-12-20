@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+The embedding models
+"""
+
 from pydantic import BaseModel
 
 class EmbeddingModel(BaseModel):

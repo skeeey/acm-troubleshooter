@@ -1,4 +1,9 @@
 # coding: utf-8
+
+"""
+The cases for index evaluation
+"""
+
 irrelevant_cases = [
     "hello",
     "hello world",
@@ -15,8 +20,10 @@ cluster_cases = [
     # "why cluster is unknown",
     # "why cluster status is unknown",
     # "my cluster local-cluster is unknown",
-    # "My cluster stuck in the Installing state when I install multicluster engine operator on a OpenShift Service on AWS with hosted control planes cluster",
-    # "The status of all managed clusters on a OpenShift Service on AWS hosted clusters suddenly becomes Unknown.",
+    # "My cluster stuck in the Installing state when I install multicluster
+    # engine operator on a OpenShift Service on AWS with hosted control planes cluster",
+    # "The status of all managed clusters on a OpenShift Service on AWS hosted
+    # clusters suddenly becomes Unknown.",
 ]
 
 addon_cases = [
@@ -37,7 +44,8 @@ question_cases = [
     # "what's the multicluster global hub?",
     # "how to access acm",
     # "How to get must-gather for global hub",
-    # "How to resolve ERROR: could not resize shared memory segment \"/PostgreSQL.1083654800\" to 25031264 bytes: No space left on device (SQLSTATE 53100)",
+    # "How to resolve ERROR: could not resize shared memory segment \"/PostgreSQL.1083654800\" to
+    # 25031264 bytes: No space left on device (SQLSTATE 53100)",
 ]
 
 negative_cases = [
