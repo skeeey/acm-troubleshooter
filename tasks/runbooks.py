@@ -43,6 +43,7 @@ acm_docs_attrs = {
   "cim": "central infrastructure management",
   "infra": "infrastructure operator for Red Hat OpenShift"
 }
+acm_url="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.12/html-single"
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ def index(uid: uuid.UUID, repo_url: str, branch: str, version: str, repo_dir: st
         exclude_list = ["apis", "api", "README.adoc", "SECURITY.adoc", "EXTERNAL_CONTRIBUTING.adoc",
                     ".asciidoctorconfig.adoc", "common-attributes.adoc", "main.adoc", "master.adoc"]
         # TODO the version should be configured
-        base_url = "https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.12/html-single"
+        base_url = acm_url
         docs.extend(convert_acm_docs(repo_dir, acm_docs_attrs, base_url, exclude_list))
     else:
         exclude_list = ["README.md", "SECURITY.md", "GUIDELINE.md", "index.md"]

@@ -16,6 +16,8 @@ class Context(SQLModel, table=True):
     llm_config: str | None = Field(default=None, sa_column=Column(JSON))
     issue_id: uuid.UUID = Field(nullable=False, unique=True, foreign_key="issue.id", ondelete="CASCADE")
 
+# one issue means one chat session
+# TODO change the table name from issue to chat
 class Issue(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str

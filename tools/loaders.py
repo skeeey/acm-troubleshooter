@@ -37,14 +37,10 @@ def list_files(start_path, exclude_list, suffix):
 
     return file_list
 
-def get_first_path(current_path: Path) -> str:
+def get_acm_component_path(current_path: Path) -> str:
     if len(current_path.parts) <= 1:
         raise ValueError(f"bad path: {current_path}")
-
-    return current_path.parts[1]
-
-def get_acm_component_path(current_path: Path) -> str:
-    component_name = get_first_path(current_path)
+    component_name = current_path.parts[1]
     # TODO find the mapping from main.adoc
     if component_name == "console":
         return "web_console/index"
@@ -64,7 +60,7 @@ def to_acm_url(current_path: Path, base_url: str, url: str):
     if not match:
         return f"{base_url}/{component_path}"
 
-    anchor = match.group('anchor').strip()
+    anchor = match.group("anchor").strip()
     return f"{base_url}/{component_path}#{anchor}"
 
 def replace_acm_doc_inline_links(current_path: Path, base_url: str, content: str) -> str:
@@ -127,12 +123,13 @@ def remove_acm_repetitive_docs(docs: list[str]) -> list[str]:
 def get_acm_doc_link(base_url: str, parent_dir: str, file_path: str):
     component_path=get_acm_component_path(Path(file_path.replace(parent_dir, "")))
     adoc_f = file_path.replace("-md", "").replace(".md", "")
-    with open(adoc_f, 'r', encoding='utf-8') as f:
+    with open(adoc_f, "r", encoding="utf-8") as f:
         anchor = next(f).strip().removeprefix("[").removesuffix("]")
         url = f"{base_url}/{component_path}{anchor}"
     return url
 
-def convert_acm_docs(adoc_dir: str, doc_attrs: dict[str, str], base_url: str, exclude_list: list[str]) -> list[DocLocation]:
+def convert_acm_docs(adoc_dir: str, doc_attrs: dict[str, str],
+                     base_url: str, exclude_list: list[str]) -> list[DocLocation]:
     parent_dir = os.path.dirname(adoc_dir)
     md_dir = os.path.join(parent_dir, f"{os.path.basename(adoc_dir)}-md")
     md_files = []
@@ -208,7 +205,7 @@ def overwrite_runbooks(rb_dir: str, base_url: str, exclude_list: list[str]) -> l
     for rb_f in list_files(rb_dir, exclude_list, ".md"):
         with open(Path(rb_f), encoding="utf-8") as f:
             content = f.read()
-        
+
         content = replace_runbook_inline_links(Path(rb_f.replace(rb_dir, "")), base_url, content)
 
         # overwrite the file
