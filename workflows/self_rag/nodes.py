@@ -37,7 +37,7 @@ def retrieve_func(rag_svc: RAGService):
         relevant_doc_names = []
         for node in nodes:
             relevant_docs.append(node.text)
-            relevant_doc_names.append(node.metadata["filename"])
+            relevant_doc_names.append(node.metadata["filelink"])
 
         current_state["relevant_docs"] = relevant_docs
         current_state["relevant_doc_names"] = relevant_doc_names
@@ -54,7 +54,6 @@ def answer_func():
         query = current_state["query"]
         history_records = current_state["history_records"]
 
-        # TODO (optimize) check the token size of the documents and history to limit the context
         result = respond(documents=documents, query=query, history_records=history_records)
 
         current_state["response"] = result.response

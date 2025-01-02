@@ -6,6 +6,10 @@ The models of doc
 
 from pydantic import BaseModel
 
+class DocLocation(BaseModel):
+    path: str
+    url: str
+
 class RunBookSetVersion(BaseModel):
     version: str
     state: str

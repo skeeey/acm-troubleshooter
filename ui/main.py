@@ -45,7 +45,8 @@ def send_feedback(eval_req: EvaluationRequest):
     return None
 
 def show_asst_resp(chat_resp: Response):
-    md = ["##### Reasoning", chat_resp.reasoning, "##### Response", chat_resp.resp]
+    md = ["##### Response", chat_resp.resp,
+          "##### Reasoning", chat_resp.reasoning, "##### References", chat_resp.references]
     st.markdown("\n".join(md))
 
 # start the web page

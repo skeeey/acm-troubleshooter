@@ -8,6 +8,7 @@ import logging
 import dspy
 from models.chat import Record
 from prompts.templates import RESPONSE_NOTICES
+from tools.common import count_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class Response(dspy.Signature):
 
     response: str = dspy.OutputField()
 
+# TODO (optimize) check the token size (> 40k) of the prompt to limit/compress (LLMLingua) the prompt
 def respond(documents: list[str], query: str, history_records: list[Record], notices=RESPONSE_NOTICES):
     resp = dspy.ChainOfThought(Response)
     result = resp(
@@ -33,3 +35,10 @@ def respond(documents: list[str], query: str, history_records: list[Record], not
     )
     logger.debug(result)
     return result
+
+def size_prompt(documents: list[str], query: str, history_records: list[Record], notices) -> int:
+    histories = []
+    for r in history_records:
+        histories.append(r.role)
+        histories.append(r.message)
+    return count_tokens("\n".join(documents) + query + "\n" + "\n".join(histories) + notices)

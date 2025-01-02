@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-The common helper functions
+The common helping functions
 """
 
 import os

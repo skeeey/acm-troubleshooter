@@ -13,10 +13,10 @@ from dotenv import load_dotenv
 from llama_index.core import Settings
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from embeddings.huggingface import BGE
 from signatures.retriever import convert_question, grade_relevant_nodes
 from services.index import RAGService
 from services.storage import StorageService
-from tools.embeddings.huggingface import BGE
 from tools.common import is_empty
 from evaluation.cases import irrelevant_cases, cluster_cases, addon_cases, question_cases
 

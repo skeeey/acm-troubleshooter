@@ -17,6 +17,7 @@ class Response(BaseModel):
     resp_id: str
     resp: str
     reasoning: str
+    references: str
 
 class EvaluationRequest(BaseModel):
     issue_id: str

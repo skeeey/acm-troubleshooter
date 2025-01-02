@@ -15,6 +15,7 @@ from fastapi.responses import RedirectResponse
 from llama_index.core import Settings
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from embeddings.huggingface import BGE
 from models.contexts import LLMConfig, RetrievalConfig, Context
 from models.chat import Request, Response, EvaluationRequest
 from models.docs import RunBookSetRequest, RunBookSetResponse, RunBookSetVersion
@@ -24,7 +25,6 @@ from services.storage import StorageService
 from tasks.runbooks import index
 from tools.common import is_empty
 from tools.git import parse_repo, clone, pull, fetch_head_commit
-from tools.embeddings.huggingface import BGE
 
 # load envs
 load_dotenv()
@@ -104,7 +104,8 @@ async def chat(req: Request) -> Response:
             referenced_docs = llm_resp["relevant_doc_names"],
         )
         return Response(issue_id=str(db_resp.issue_id), resp_id=str(db_resp.id),
-                        resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
+                        resp=db_resp.asst_resp, reasoning=db_resp.reasoning,
+                        references="\n".join(f"- {item}" for item in llm_resp["relevant_doc_names"]))
 
     # an existed issue, continue to resolve the issue with user's new inputs
     if is_empty(req.query):
@@ -133,7 +134,8 @@ async def chat(req: Request) -> Response:
         referenced_docs = llm_resp["relevant_doc_names"],
     )
     return Response(issue_id=str(db_resp.issue_id), resp_id=str(db_resp.id),
-                    resp=db_resp.asst_resp, reasoning=db_resp.reasoning)
+                    resp=db_resp.asst_resp, reasoning=db_resp.reasoning,
+                    references="\n".join(f"- {item}" for item in llm_resp["relevant_doc_names"]))
 
 @app.put("/evaluation")
 async def evaluate(req: EvaluationRequest):
@@ -199,7 +201,7 @@ async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: Backgro
             # TODO if rsv status is failed, try to reindex
             return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
 
-        bg_tasks.add_task(index, rs.id, repo_dir, version, rag_svc, storage_svc)
+        bg_tasks.add_task(index, rs.id, req.repo, req.branch, version, repo_dir, rag_svc, storage_svc)
         return RedirectResponse(status_code=303, url=f"/runbooksets/{str(rs.id)}")
 
     # clone the repo
@@ -216,7 +218,7 @@ async def create_or_update_runbook_set(req: RunBookSetRequest, bg_tasks: Backgro
 
     new_rs = storage_svc.create_runbook_set(repo=req.repo, branch=req.branch)
 
-    bg_tasks.add_task(index, new_rs.id, repo_dir, version, rag_svc, storage_svc)
+    bg_tasks.add_task(index, new_rs.id, req.repo, req.branch, version, repo_dir, rag_svc, storage_svc)
     return RedirectResponse(status_code=303, url=f"/runbooksets/{str(new_rs.id)}")
 
 @app.delete("/runbooksets/{runbook_set_id}")
