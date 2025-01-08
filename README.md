@@ -55,7 +55,7 @@ For a runbook, it should
 - [ ] issue triage (determine which team is responsible for the issue)
 - [ ] generate a slack bot in the mce/server-foundation channel
 - [ ] use a local LLM
-- [ ] the retrieve results evaluation standard
+- [x] the retrieve results evaluation standard
 - [ ] the LLM response evaluation standard
 
 ## Refers to
