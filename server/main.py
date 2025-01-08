@@ -17,7 +17,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from embeddings.huggingface import BGE
 from models.contexts import LLMConfig, RetrievalConfig, Context
-from models.chat import Request, Response, EvaluationRequest
+from models.chat import Request, Response, EvaluationRequest, UserRequest, UserResponse
 from models.docs import RunBookSetRequest, RunBookSetResponse, RunBookSetVersion
 from services.llm import LLMService
 from services.index import RAGService
@@ -72,6 +72,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.post("/users")
+async def create_user(req: UserRequest) -> UserResponse:
+    user = storage_svc.find_user(req.name)
+    if user is None:
+        user = storage_svc.create_user(req.name)
+    return UserResponse(id=str(user.id), name=user.name)
+
 @app.post("/chat")
 async def chat(req: Request) -> Response:
     issue_id = req.issue_id
@@ -87,7 +94,7 @@ async def chat(req: Request) -> Response:
                 retrieval_config=RetrievalConfig(doc_sources=doc_sources),
             )
 
-        issue = storage_svc.create_issue(name=req.query)
+        issue = storage_svc.create_issue(user_id=uuid.UUID(req.user_id), name=req.query)
         storage_svc.create_context(
             issue_id=issue.id,
             llm_cfg=ctx.llm_config.model_dump_json(),

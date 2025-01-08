@@ -10,6 +10,11 @@ import uuid
 from datetime import datetime, timezone
 from sqlmodel import Column, JSON, SQLModel, Session, Field, create_engine, select
 
+class User(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    name: str
+    create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+
 class Context(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     retrieval_config: str | None = Field(default=None, sa_column=Column(JSON))
@@ -22,6 +27,7 @@ class Issue(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    user_id: uuid.UUID = Field(nullable=False, foreign_key="user.id", ondelete="CASCADE")
 
 class Response(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -64,6 +70,20 @@ class StorageService:
         SQLModel.metadata.create_all(engine)
         self.engine = engine
 
+    def create_user(self, name: str) -> User:
+        user = User(name=name)
+        with Session(self.engine) as session:
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            return user
+
+    def find_user(self, name: str) -> User:
+        with Session(self.engine) as session:
+            statement = select(User).where(User.name == name)
+            results = session.exec(statement)
+            return results.first()
+
     def create_context(self, issue_id: uuid.UUID, retrieval_cfg: str, llm_cfg: str):
         ctx = Context(retrieval_config=retrieval_cfg, llm_config=llm_cfg, issue_id=issue_id)
         with Session(self.engine) as session:
@@ -76,8 +96,8 @@ class StorageService:
             results = session.exec(statement)
             return results.first()
 
-    def create_issue(self, name: str) -> Issue:
-        name = Issue(name=name)
+    def create_issue(self, user_id: uuid.UUID, name: str) -> Issue:
+        name = Issue(name=name, user_id=user_id)
         with Session(self.engine) as session:
             session.add(name)
             session.commit()

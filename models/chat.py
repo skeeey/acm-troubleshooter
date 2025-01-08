@@ -7,7 +7,15 @@ The models of chat
 from pydantic import BaseModel
 from models.contexts import Context
 
+class UserRequest(BaseModel):
+    name: str
+
+class UserResponse(BaseModel):
+    id: str
+    name: str
+
 class Request(BaseModel):
+    user_id: str
     context: Context | None = None
     issue_id: str | None = None
     query: str | None = None
