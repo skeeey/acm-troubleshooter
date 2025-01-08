@@ -49,13 +49,14 @@ For a runbook, it should
 
 ## TODO
 - [x] support to ask ACM relevant questions/knowledge
-- [ ] continue to fine-tune the result with current troubleshooting docs and user issues (slack)
-- [ ] evaluate the retrieve results
-- [ ] evaluate the LLM response results
+- [x] support to evaluate the response by user
+- [x] support to show current used docs in UI
+- [ ] continue to test the result with real user issues (slack/customer cases)
+- [ ] issue triage (determine which team is responsible for the issue)
+- [ ] generate a slack bot in the mce/server-foundation channel
 - [ ] use a local LLM
-- [x] support to evaluate the result
-- [ ] support to show current used docs in UI
-- [ ] support to add and use user-owned docs
+- [ ] the retrieve results evaluation standard
+- [ ] the LLM response evaluation standard
 
 ## Refers to
 - https://github.com/stanfordnlp/dspy/
