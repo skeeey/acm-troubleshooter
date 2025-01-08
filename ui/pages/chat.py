@@ -101,7 +101,7 @@ please log them on the https://github.com/skeeey/acm-troubleshooter/issues
 """
 
 """
-Using /new to start a new question.
+Using /new to start a new chat.
 """
 
 if "messages" not in st.session_state:
