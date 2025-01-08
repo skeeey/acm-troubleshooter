@@ -10,7 +10,7 @@ COMMON_NOTICES = """
 - Terms like "cluster", "managed cluster", "spoke", "spoke cluster", or "ManagedCluster" stand for an ACM managed cluster.
 - Terms "addon" or "add-on" stand for the ACM ManagedClusterAddOn.
 - The term "mce" stands for multicluster engine operator.
-- Terms "global-hub" or "global hub" stands for multicluster global hub.
+- Terms "global-hub", "globalhub" or "global hub" stands for multicluster global hub.
 - The term "ocp" stands for Red Hat OpenShift Container Platform.
 - The term "ocm" stands for OpenShift Cluster Manager.
 - The term "rosa" stands for OpenShift Service on AWS."""
