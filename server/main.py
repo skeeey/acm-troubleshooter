@@ -101,7 +101,15 @@ async def chat(req: Request) -> Response:
             retrieval_cfg=ctx.retrieval_config.model_dump_json(),
         )
 
-        llm_resp = llm_svc.response(mcfg=ctx.llm_config, rcfg=ctx.retrieval_config, query=req.query, history_resps=[])
+        try:
+            llm_resp = llm_svc.response(
+                mcfg=ctx.llm_config,
+                rcfg=ctx.retrieval_config,
+                query=req.query,
+                history_resps=[]
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f'failed to get response from llm, {e}') from e
 
         db_resp = storage_svc.create_resp(
             issue_id=issue.id,
@@ -126,12 +134,15 @@ async def chat(req: Request) -> Response:
     if issue is None:
         raise HTTPException(status_code=404, detail="the issue not found")
 
-    llm_resp = llm_svc.response(
-        mcfg=LLMConfig.model_validate_json(ctx.llm_config),
-        rcfg=RetrievalConfig.model_validate_json(ctx.retrieval_config),
-        query=req.query,
-        history_resps=storage_svc.list_resp(uuid.UUID(issue_id)),
-    )
+    try:
+        llm_resp = llm_svc.response(
+            mcfg=LLMConfig.model_validate_json(ctx.llm_config),
+            rcfg=RetrievalConfig.model_validate_json(ctx.retrieval_config),
+            query=req.query,
+            history_resps=storage_svc.list_resp(uuid.UUID(issue_id)),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'failed to get response from llm, {e}') from e
 
     db_resp = storage_svc.create_resp(
         issue_id=issue_id,

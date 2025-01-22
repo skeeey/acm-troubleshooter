@@ -27,22 +27,39 @@ logger = logging.getLogger(__name__)
 server_url = "http://127.0.0.1:8000"
 
 def send_req(chat_req: Request) -> Response:
-    http_resp = requests.post(f"{server_url}/chat", data=chat_req.model_dump_json(), timeout=300)
-    if http_resp.status_code == 200:
-        return Response.model_validate_json(http_resp.content), None
-
-    return None, f"failed to response, err=({http_resp.status_code}, {http_resp.content})"
+    try:
+        http_resp = requests.post(f"{server_url}/chat", data=chat_req.model_dump_json(), timeout=300)
+        if http_resp.status_code == 200:
+            return Response.model_validate_json(http_resp.content), None
+        return None, f"failed to response, err=({http_resp.status_code}, {http_resp.content})"
+    except requests.exceptions.Timeout:
+        return None, "failed to send request timeout"
+    except requests.exceptions.RequestException as e:
+        return None, f"failed to send request {e}"
 
 def send_feedback(eval_req: EvaluationRequest):
-    http_resp = requests.put(f"{server_url}/evaluation", data=eval_req.model_dump_json(), timeout=300)
-    if http_resp.status_code == 200:
+    try:
+        http_resp = requests.put(f"{server_url}/evaluation", data=eval_req.model_dump_json(), timeout=30)
+        if http_resp.status_code == 200:
+            return None
+        logger.error("failed to send (score=%d, feedback=%s) for issue %s-%s, err=(%d,%s)",
+                    eval_req.score, eval_req.feedback,
+                    eval_req.issue_id, eval_req.resp_id,
+                    http_resp.status_code, http_resp.content)
+        return None
+    except requests.exceptions.Timeout:
+        logger.error("failed to send request: timeout")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"failed to send request: {e}")
         return None
 
-    logger.error("failed to send (score=%d, feedback=%s) for issue %s-%s, err=(%d,%s)",
-                 eval_req.score, eval_req.feedback,
-                 eval_req.issue_id, eval_req.resp_id,
-                 http_resp.status_code, http_resp.content)
-    return None
+def think(user, prompt):
+    with st.spinner("Thinking ..."):
+        req = Request(user_id=user.id, query=prompt)
+        if st.session_state["response"] is not None:
+            req.issue_id = st.session_state["response"].issue_id
+        return send_req(chat_req=req)
 
 def show_asst_resp(chat_resp: Response):
     md = []
@@ -56,10 +73,7 @@ def show_asst_resp(chat_resp: Response):
     if len(chat_resp.references) != 0:
         md.append("##### References")
         md.append(chat_resp.references)
-    
-    # md = ["##### Reasoning", chat_resp.reasoning,
-    #       "##### Response", chat_resp.resp,
-    #       "##### References", chat_resp.references]
+
     st.markdown("\n".join(md))
 
 user = st.session_state.get("user", None)
@@ -135,20 +149,15 @@ if prompt := st.chat_input(placeholder="Message ACM Assistant"):
     with st.chat_message("user", avatar="👨‍💻"):
         st.markdown(prompt)
 
-    with st.spinner("Thinking ..."):
-        req = Request(user_id=user.id, query=prompt)
-        if st.session_state["response"] is not None:
-            req.issue_id = st.session_state["response"].issue_id
+    resp, err = think(user=user, prompt=prompt)
+    if err is not None:
+        st.error(err)
+        st.stop()
 
-        resp, err = send_req(chat_req=req)
-        if err is not None:
-            st.error(err)
-            st.stop()
-
-        st.session_state["response"] = resp
-        with st.chat_message("assistant", avatar="🤖"):
-            messages.append({"role": "assistant", "content": st.session_state["response"]})
-            show_asst_resp(st.session_state["response"])
+    st.session_state["response"] = resp
+    with st.chat_message("assistant", avatar="🤖"):
+        messages.append({"role": "assistant", "content": st.session_state["response"]})
+        show_asst_resp(st.session_state["response"])
 
 if st.session_state["response"]:
     feedback = streamlit_feedback(

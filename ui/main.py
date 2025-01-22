@@ -31,11 +31,17 @@ def is_redhat_email(email):
 
 def create_user(name: str):
     req = UserRequest(name=name)
-    http_resp = requests.post(f"{server_url}/users", data=req.model_dump_json(), timeout=300)
-    if http_resp.status_code == 200:
-        return UserResponse.model_validate_json(http_resp.content), None
+    try:
+        http_resp = requests.post(f"{server_url}/users", data=req.model_dump_json(), timeout=30)
+        if http_resp.status_code == 200:
+            return UserResponse.model_validate_json(http_resp.content), None
 
-    return None, f"failed to create the user {name}, err=({http_resp.status_code}, {http_resp.content})"
+        return None, f"failed to create the user {name}, err=({http_resp.status_code}, {http_resp.content})"
+    except requests.exceptions.Timeout:
+        return None, "failed to send request timeout"
+    except requests.exceptions.RequestException as e:
+        return None, f"failed to send request {e}"
+
 
 st.set_page_config(page_icon="💬", page_title="ACM Assistant", initial_sidebar_state="collapsed")
 
