@@ -28,6 +28,10 @@ local/run-server:
 local/run-streamlit:
 	streamlit run --server.port=8080 ui/main.py
 
+.PHONY: local/show-records
+local/show-records:
+	streamlit run --server.port=8080 evaluation/records.py
+
 .PHONY: local/run-mlflow
 local/run-mlflow:
 	mlflow ui --port 5000

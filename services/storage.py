@@ -7,8 +7,9 @@ The service to store the chat records
 """
 
 import uuid
+from pydantic import BaseModel
 from datetime import datetime, timezone
-from sqlmodel import Column, JSON, SQLModel, Session, Field, create_engine, select
+from sqlmodel import Column, JSON, SQLModel, Session, Field, create_engine, select, text
 
 class User(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -63,6 +64,15 @@ class RunbookSetVersion(SQLModel, table=True):
     state: str
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     runbook_set_id: uuid.UUID = Field(nullable=False, foreign_key="runbookset.id", ondelete="CASCADE")
+
+class IssueRecord(BaseModel):
+    issue_id: uuid.UUID
+    issue_name: str
+    issue_create_at: datetime
+    response_id: uuid.UUID | None
+    response_create_at: datetime | None
+    evaluation_score: int | None
+    evaluation_feedback: str | None
 
 class StorageService:
     def __init__(self, db_url: str):
@@ -136,6 +146,32 @@ class StorageService:
         with Session(self.engine) as session:
             session.add(evaluation)
             session.commit()
+
+    def get_issues_records(self) -> list[IssueRecord]:
+        with Session(self.engine) as session:
+            query = text("""
+                SELECT issue.id AS issue_id, issue.name AS issue_name, issue.create_at AS issue_create_at,
+                   response.id AS response_id, response.create_at AS response_create_at,
+                   evaluation.score AS evaluation_score, evaluation.feedback AS evaluation_feedback
+                FROM issue
+                LEFT JOIN response ON issue.id = response.issue_id
+                LEFT JOIN evaluation ON response.id = evaluation.resp_id;
+            """)
+
+            result = session.exec(query)
+
+            issue_records = []
+            for row in result:
+                issue_records.append(IssueRecord(
+                    issue_id=row.issue_id,
+                    issue_name=row.issue_name,
+                    issue_create_at=row.issue_create_at,
+                    response_id=row.response_id,
+                    response_create_at=row.response_create_at,
+                    evaluation_score=row.evaluation_score,
+                    evaluation_feedback=row.evaluation_feedback,
+                ))
+            return issue_records
 
     def create_runbook_set(self, repo: str, branch: str) -> RunbookSet:
         runbook_set = RunbookSet(repo=repo, branch=branch)
