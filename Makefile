@@ -24,6 +24,10 @@ run-streamlit:
 local/run-server:
 	uvicorn server.main:app
 
+.PHONY: local/run-slack-bot
+local/run-slack-bot:
+	uvicorn slack.main:server
+
 .PHONY: local/run-streamlit
 local/run-streamlit:
 	streamlit run --server.port=8080 ui/main.py

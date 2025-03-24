@@ -28,10 +28,10 @@ def retrieve_func(rag_svc: RAGService):
             nodes = rag_svc.retrieve(query=new_query, sources=sources)
             if len(nodes) == 0:
                 logger.warning("no relevant nodes for query: %s", new_query)
-                current_state["terminated"] = True
-                current_state["response"] = "Sorry, no relevant docs are found, I have no idea for this issue"
-                current_state["reasoning"] = ""
-                return current_state
+                # current_state["terminated"] = True
+                # current_state["response"] = "Sorry, no relevant docs are found, I have no idea for this issue"
+                # current_state["reasoning"] = ""
+                # return current_state
 
         relevant_docs = []
         relevant_doc_names = []
