@@ -30,7 +30,7 @@ Find suitable squads from the following list to assign the given issue and outpu
   Because ACM depends on and uses the multicluster engine operator, after you create the MultiClusterHub resource during
   installation, the ACM operator automatically installs the multicluster engine operator and creates the 
   MultiClusterEngine resource.
-- acm-console: maintains the ACM console which provides comprehensive tools for managing and monitoring
+- acm-console: maintains the ACM console UI which provides comprehensive tools for managing and monitoring
   multiple Kubernetes clusters. Key features include an integrated search functionality for quickly
   finding resources, virtual machine operations for managing VMs directly from the console, and a
   multi-cluster management view that offers detailed insights into cluster health, compliance, and

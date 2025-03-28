@@ -81,7 +81,7 @@ def handle_app_mentions(event, client):
         dialogue = to_dialogue_context(get_thread_messages(client, channel, msg_ts))
         llm_resp = openai_call(system_prompt, runbook_template.format(dialogue=dialogue))
         reply(client, channel, msg_ts, msg, llm_resp)
-    elif msg == "assign":
+    elif msg == "triage":
         # TODO add dialogue context
         issue = get_thread_messages(client, channel, msg_ts)[0]["text"]
         llm_resp = openai_call(system_prompt, squad_template.format(issue=issue))

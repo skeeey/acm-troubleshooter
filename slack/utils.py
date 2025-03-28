@@ -101,7 +101,7 @@ def reply(client, channel_id, timestamp, msg, llm_resp):
     if msg == "runbook":
         _, result = split_resp(llm_resp)
         response = post_msg(client, channel_id, timestamp, f"*Runbook*\n{result}")
-    elif msg == "assign":
+    elif msg == "triage":
         _, result = split_resp(llm_resp)
         objs = extract_json(result)
         squads = []

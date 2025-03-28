@@ -2,9 +2,12 @@
 
 1. Generate a runbook from a dialogue.
 2. Find suitable squads to assign the given issue
-3. Chat with the bot
-    - Search docs to give a suggestion for the user's question
-    - More complex Scenario (result is not good) (https://docs.google.com/spreadsheets/d/1PE5AY3YRevVJZ3HUzt-boOFqHTw_bKud9T7v8krWWSE/edit?gid=1193054023#gid=1193054023)
+3. Give a suggestion for the user's question based on ACM docs
+4. (TODO) Chat with the bot to resolve the issue in complex scenario
+    - Access the third system to get more info, e.g. JIRA/support cases/code repo
+    - Analyze the must-gather
+    - Analyze the user's screenshot/vidoe
+    - etc
 
-Requirement
+## Requirement
 - A publish service that can be accessed by slack service
