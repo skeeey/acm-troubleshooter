@@ -8,6 +8,10 @@ deps:
 lint:
 	pylint **/*.py
 
+.PHONY: binary
+binary:
+	hack/build_binary.sh
+
 .PHONY: run-pgvector
 run-pgvector:
 	hack/run_pgvector.sh

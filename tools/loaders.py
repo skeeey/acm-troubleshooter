@@ -252,3 +252,23 @@ def do_partition(f: DocLocation, source: str) -> list[Document]:
             "source": source,
         }
     return docs
+
+def load_runbooks(dir, exclude_list=None):
+    if exclude_list is None:
+        exclude_list = ["README.md", "SECURITY.md", "GUIDELINE.md", "index.md"]
+    
+    contents = []
+    mds = load_markdowns(dir, exclude_list)
+    for md in mds:
+        content = md.page_content
+        contents.append(content)
+    return "Runbook: " + "\n\n---\n\nRunbook: ".join(contents)
+
+def load_markdowns(dir, exclude_list):
+    files = list_files(dir, exclude_list)
+    mds = []
+    for md_file in files:
+        docs = MarkdownReader().load_data(md_file)
+        for doc in docs:
+            mds.extend(doc.text)
+    return mds

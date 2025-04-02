@@ -26,3 +26,20 @@ CONVERTOR_NOTICES = f"""
 - The query should be about ACM.
 - If the query is not related to ACM, return an empty string.
 """
+
+# TODO using a grace prompt to stop the troubleshooting process
+REPLAN_NOTICES = """
+If the new plan contains `oc apply` command, Set the termination to true, otherwise set it to false.
+"""
+
+EXECUTOR_EXAMPLES = """
+  Current Plan:
+    Check the ManagedClusterConditionAvailable condition for managed cluster cluster1 on the hub cluster:
+    ```sh
+    oc get managedcluster cluster1 -ojsonpath='{.status.conditions[?(@.type=="ManagedClusterConditionAvailable")].status}'
+    ```
+  Output Commands:
+    omc use /home/user1/hub
+    available_status=$(omc get managedcluster cluster1 -ojsonpath='{.status.conditions[?(@.type=="ManagedClusterConditionAvailable")].status}')
+    echo "ManagedClusterConditionAvailable for cluster1: ${available_status}"
+"""

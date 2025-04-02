@@ -17,9 +17,9 @@ from embeddings.huggingface import BGE
 from models.contexts import LLMConfig, RetrievalConfig
 from services.llm import LLMService
 from services.index import RAGService
+from tools.llm import llm_call
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
-from slack.llm import openai_call
 from slack.utils import get_thread_messages, to_dialogue_context, post_msg, reply
 from slack.prompt import system_prompt, runbook_template, squad_template
 
@@ -79,12 +79,24 @@ def handle_app_mentions(event, client):
 
     if msg == "runbook":
         dialogue = to_dialogue_context(get_thread_messages(client, channel, msg_ts))
-        llm_resp = openai_call(system_prompt, runbook_template.format(dialogue=dialogue))
+        llm_resp = llm_call(
+            llm_model,
+            llm_api_base,
+            llm_api_key,
+            system_prompt,
+            runbook_template.format(dialogue=dialogue),
+        )
         reply(client, channel, msg_ts, msg, llm_resp)
     elif msg == "triage":
         # TODO add dialogue context
         issue = get_thread_messages(client, channel, msg_ts)[0]["text"]
-        llm_resp = openai_call(system_prompt, squad_template.format(issue=issue))
+        llm_resp = llm_call(
+            llm_model,
+            llm_api_base,
+            llm_api_key,
+            system_prompt,
+            squad_template.format(issue=issue),
+        )
         reply(client, channel, msg_ts, msg, llm_resp)
     elif msg == "suggest":
         # TODO add dialogue context

@@ -4,13 +4,12 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from ollama import Client
-from slack.prompt import system_prompt, squad_template
 
 # load envs
 load_dotenv()
 
-def openai_call(system_prompt, user_prompt):
-    model=os.getenv("LM_MODEL")
+def llm_call(model, base_url, api_key, system_prompt, user_prompt):
+    # model=os.getenv("LM_MODEL")
 
     if model.startswith("ollama/"):
         client = Client(host="http://localhost:11434")
@@ -24,8 +23,10 @@ def openai_call(system_prompt, user_prompt):
         return response.message.content
 
     client = OpenAI(
-        api_key=os.getenv("LM_API_KEY"),
-        base_url=os.getenv("LM_API_BASE"),
+        api_key=api_key,
+        base_url=base_url,
+        # api_key=os.getenv("LM_API_KEY"),
+        # base_url=os.getenv("LM_API_BASE"),
     )
     response = client.chat.completions.create(
         model=os.getenv("LM_MODEL"),
