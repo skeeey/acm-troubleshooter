@@ -15,7 +15,7 @@ from st_aggrid import AgGrid
 from pydantic import BaseModel
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from services.storage import StorageService
+from server.services.db import DatabaseService
 
 # load envs
 load_dotenv()
@@ -33,9 +33,9 @@ class IssueRecord(BaseModel):
     responses: list[ResponseRecord]
 
 def get_records() -> dict[str, IssueRecord]:
-    storage_svc = StorageService(db_url=os.getenv("DATABASE_URL"))
+    db_svc = DatabaseService(db_url=os.getenv("DATABASE_URL"))
     records = {}
-    for r in storage_svc.get_issues_records():
+    for r in db_svc.get_issues_records():
         if r.response_id is None:
             print(f"issue {r.issue_id} does not have response")
             continue
@@ -67,8 +67,8 @@ def get_records() -> dict[str, IssueRecord]:
     return records
 
 def show_resp(resp_id: str):
-    storage_svc = StorageService(db_url=os.getenv("DATABASE_URL"))
-    resp = storage_svc.get_resp(uuid.UUID(resp_id))
+    db_svc = DatabaseService(db_url=os.getenv("DATABASE_URL"))
+    resp = db_svc.get_resp(uuid.UUID(resp_id))
     md = []
     if resp.user_query is not None:
         md.append("##### Query")

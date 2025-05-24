@@ -47,6 +47,17 @@ For a runbook, it should
     - specify whether the step should be run on the hub cluster or the managed cluster;
     - if one step needs to refer to the other runbooks, using the related runbook title as the markdown link text, for example, `[runbook_title](runbook_location)`
 
+# Slack Integration
+
+1. Generate a runbook from a dialogue.
+2. Find suitable squads to assign the given issue
+3. Give a suggestion for the user's question based on ACM docs
+4. (TODO) Chat with the bot to resolve the issue in complex scenario
+    - Access the third system to get more info, e.g. JIRA/support cases/code repo
+    - Analyze the must-gather
+    - Analyze the user's screenshot/vidoe
+    - etc
+
 ## TODO
 - [x] support to ask ACM relevant questions/knowledge
 - [x] support to evaluate the response by user

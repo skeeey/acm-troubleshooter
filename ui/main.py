@@ -13,10 +13,10 @@ import requests
 from email_validator import validate_email, EmailNotValidError
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from models.chat import UserRequest, UserResponse
+from server.schemas.user import Request, Response
 
 # server settings
-server_url = "http://127.0.0.1:8000"
+server_url = "http://127.0.0.1:8000/api"
 
 def is_redhat_email(email):
     try:
@@ -30,12 +30,11 @@ def is_redhat_email(email):
 
 
 def create_user(name: str):
-    req = UserRequest(name=name)
+    req = Request(name=name)
     try:
-        http_resp = requests.post(f"{server_url}/users", data=req.model_dump_json(), timeout=30)
+        http_resp = requests.post(f"{server_url}/users/", data=req.model_dump_json(), timeout=30)
         if http_resp.status_code == 200:
-            return UserResponse.model_validate_json(http_resp.content), None
-
+            return Response.model_validate_json(http_resp.content), None
         return None, f"failed to create the user {name}, err=({http_resp.status_code}, {http_resp.content})"
     except requests.exceptions.Timeout:
         return None, "failed to send request timeout"

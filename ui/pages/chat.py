@@ -14,7 +14,8 @@ import streamlit as st
 from streamlit_feedback import streamlit_feedback
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from models.chat import Request, Response, EvaluationRequest
+from server.schemas.chat import Request, Response
+from server.schemas.evaluation import Request as EvaluationRequest
 
 # log settings
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -24,11 +25,11 @@ logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=LOG_DATE_FORM
 logger = logging.getLogger(__name__)
 
 # server settings
-server_url = "http://127.0.0.1:8000"
+server_url = "http://127.0.0.1:8000/api"
 
 def send_req(chat_req: Request) -> Response:
     try:
-        http_resp = requests.post(f"{server_url}/chat", data=chat_req.model_dump_json(), timeout=300)
+        http_resp = requests.post(f"{server_url}/chat/", data=chat_req.model_dump_json(), timeout=300)
         if http_resp.status_code == 200:
             return Response.model_validate_json(http_resp.content), None
         return None, f"failed to response, err=({http_resp.status_code}, {http_resp.content})"
@@ -39,7 +40,7 @@ def send_req(chat_req: Request) -> Response:
 
 def send_feedback(eval_req: EvaluationRequest):
     try:
-        http_resp = requests.put(f"{server_url}/evaluation", data=eval_req.model_dump_json(), timeout=30)
+        http_resp = requests.put(f"{server_url}/evaluation/", data=eval_req.model_dump_json(), timeout=30)
         if http_resp.status_code == 200:
             return None
         logger.error("failed to send (score=%d, feedback=%s) for issue %s-%s, err=(%d,%s)",
