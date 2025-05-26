@@ -27,8 +27,7 @@ class DocInfo(BaseModel):
     hash: str
 
 class VectorStoreService:
-    def __init__(self, db_url: str, embed_dim: int, db_table="vector_docs",
-                 similarity_cutoff=0.5, top_k=10, top_n=3, hnsw_ef_search=300):
+    def __init__(self, db_url: str, embed_dim: int, db_table="vector_docs", hnsw_ef_search=300):
         url = make_url(db_url)
         self.vector_store = PGVectorStore.from_params(
             database=url.database,
@@ -57,9 +56,6 @@ class VectorStoreService:
             },
         )
         self.index = VectorStoreIndex.from_vector_store(vector_store=self.vector_store)
-        self.similarity_cutoff = similarity_cutoff
-        self.similarity_top_k = top_k
-        self.rerank_top_n = top_n
         self.hnsw_ef_search = hnsw_ef_search
         logger.info("Vector store service is initialized")
 
@@ -101,7 +97,8 @@ class VectorStoreService:
             docs.append(DocInfo(id=doc_id, name=doc_name, hash=doc_hash))
         return docs
 
-    def retrieve(self, query: str, sources: list[str]=None) -> list[NodeWithScore]:
+    def retrieve(self, query: str, sources: list[str]=None,
+                 similarity_cutoff=0.5, top_k=10, top_n=3,) -> list[NodeWithScore]:
         if is_empty(query):
             return []
 
@@ -116,7 +113,7 @@ class VectorStoreService:
         )
 
         retriever = self.index.as_retriever(
-            similarity_top_k=self.similarity_top_k,
+            similarity_top_k=top_k,
             vector_store_kwargs={"hnsw_ef_search": self.hnsw_ef_search},
             filters=metadata_filters,
         )
@@ -126,16 +123,16 @@ class VectorStoreService:
         start_time = time.time()
         response = query_engine.query(query)
         logger.info("docs retrieved (total=%d, top_k=%d), time used %.3fs",
-                    len(response.source_nodes), self.similarity_top_k, (time.time() - start_time))
+                    len(response.source_nodes), top_k, (time.time() - start_time))
         if logger.isEnabledFor(logging.DEBUG):
             for node in response.source_nodes:
                 logger.debug("-- doc: [%.3f] %s", node.score, node.metadata["filename"])
 
         # similarity cutoff
-        processor = SimilarityPostprocessor(similarity_cutoff=self.similarity_cutoff)
+        processor = SimilarityPostprocessor(similarity_cutoff=similarity_cutoff)
         filtered_nodes = processor.postprocess_nodes(response.source_nodes)
         logger.info("filtered nodes (total=%d, cutoff=%0.2f)",
-                     len(filtered_nodes), self.similarity_cutoff)
+                     len(filtered_nodes), similarity_cutoff)
         if len(filtered_nodes) == 0:
             return []
         if logger.isEnabledFor(logging.DEBUG):
@@ -144,10 +141,10 @@ class VectorStoreService:
 
         # rerank
         start_time = time.time()
-        reranker = FlagEmbeddingReranker(model="BAAI/bge-reranker-large", top_n=self.rerank_top_n)
+        reranker = FlagEmbeddingReranker(model="BAAI/bge-reranker-large", top_n=top_n)
         reranked_nodes = reranker.postprocess_nodes(filtered_nodes, query_str=query)
         logger.info("docs reranked (total=%d, top_n=%d), time used %.3fs",
-                    len(reranked_nodes), self.rerank_top_n, (time.time() - start_time))
+                    len(reranked_nodes), top_n, (time.time() - start_time))
         if logger.isEnabledFor(logging.DEBUG):
             for node in reranked_nodes:
                 logger.debug("-- doc: [%.3f] %s", node.score, node.metadata["filename"])
