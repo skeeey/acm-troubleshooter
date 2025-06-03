@@ -98,7 +98,7 @@ class VectorStoreService:
         return docs
 
     def retrieve(self, query: str, sources: list[str]=None,
-                 similarity_cutoff=0.5, top_k=10, top_n=3,) -> list[NodeWithScore]:
+                 top_k=10, top_n=3, cutoff=0.5) -> list[NodeWithScore]:
         if is_empty(query):
             return []
 
@@ -129,10 +129,10 @@ class VectorStoreService:
                 logger.debug("-- doc: [%.3f] %s", node.score, node.metadata["filename"])
 
         # similarity cutoff
-        processor = SimilarityPostprocessor(similarity_cutoff=similarity_cutoff)
+        processor = SimilarityPostprocessor(similarity_cutoff=cutoff)
         filtered_nodes = processor.postprocess_nodes(response.source_nodes)
         logger.info("filtered nodes (total=%d, cutoff=%0.2f)",
-                     len(filtered_nodes), similarity_cutoff)
+                     len(filtered_nodes), cutoff)
         if len(filtered_nodes) == 0:
             return []
         if logger.isEnabledFor(logging.DEBUG):

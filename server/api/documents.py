@@ -20,10 +20,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 @router.get("/")
 async def list_documents(db_svc: DatabaseService = Depends(get_db_service)):
-    doc_list = []
-    for doc in db_svc.list_documents():
-        doc_list.append(Response(id=str(doc.id), repo=doc.repo, branch=doc.branch, desc=doc.desc))
-    return doc_list
+    return db_svc.list_document_views()
 
 @router.get("/{doc_id}")
 async def get_document(doc_id: str, db_svc: DatabaseService = Depends(get_db_service)):
@@ -129,17 +126,24 @@ async def delete_document(doc_id: str,
 async def retrieve_document(req: QueryRequest,
     db_svc: DatabaseService = Depends(get_db_service),
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)):
-    docs = db_svc.list_document_views()
-    if len(docs) == 0:
-        raise HTTPException(status_code=500, detail="there are no docs")
-    
-    # TODO filter the docs
     sources = []
-    for doc in docs:
-        sources.append(doc.source)
+    if req.sources is not None:
+        sources = req.sources
+    else:
+        docs = db_svc.list_document_views(doc_state="indexed", only_latest=True)
+        if len(docs) == 0:
+            raise HTTPException(status_code=500, detail="there are no docs")
+        for doc in docs:
+            sources.append(doc.source)
 
     docs = []
-    nodes = vector_store_svc.retrieve(query=req.query, sources=sources)
+    nodes = vector_store_svc.retrieve(
+        query=req.query,
+        sources=sources,
+        top_k=req.top_k,
+        top_n=req.top_n,
+        cutoff=req.cutoff,
+    )
     for n in nodes:
         docs.append(Doc(similarity=n.score, text=n.text, link=n.metadata["filelink"]))
 

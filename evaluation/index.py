@@ -66,7 +66,7 @@ def retrieve(query, with_grade):
 
     start_time = time.time()
     sources = []
-    for doc in db_svc.list_document_views():
+    for doc in db_svc.list_document_views(doc_state="indexed", only_latest=True):
         sources.append(doc.source)
 
     nodes = rag_svc.retrieve(query=query, sources=sources)

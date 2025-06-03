@@ -62,5 +62,8 @@ class IssueRecordView(BaseModel):
     evaluation_feedback: str | None
 
 class DocumentView(BaseModel):
+    id: str
     source: str
+    latest: bool = False
+    state: str
     desc: str

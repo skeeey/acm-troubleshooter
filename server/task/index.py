@@ -9,6 +9,7 @@ import os
 import uuid
 from server.services.db import DatabaseService
 from server.services.vector import VectorStoreService
+from server.tools.common import to_doc_source
 from server.tools.loaders.common import to_docs
 from server.tools.loaders.acm import convert_docs
 from server.tools.loaders.markdown import convert_mds
@@ -25,7 +26,7 @@ def index_documents(uid: uuid.UUID,
 
     doc_commit = db_svc.add_document_commit(doc_id=uid, commit=commit)
 
-    source = f"{os.path.basename(repo_dir)}-{commit}"
+    source = to_doc_source(repo=repo_url, branch=branch, commit=commit)
     logger.info("documents %s (%s) are indexing", source, commit)
     docs = []
     if "rhacm-docs" in repo_dir:

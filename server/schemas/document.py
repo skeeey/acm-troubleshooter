@@ -24,8 +24,10 @@ class Response(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str
-    # similarity_top_k = top_k
-    # rerank_top_n = top_n
+    sources: list[str] | None = None
+    top_k: int | None = 10 # similarity top_k
+    top_n: int | None = 3 # rerank top_n
+    cutoff: float | None = 0.5 # similarity top_k
 
 class Doc(BaseModel):
     similarity: float

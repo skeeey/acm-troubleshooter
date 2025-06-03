@@ -8,8 +8,10 @@ The service to store the chat records
 
 import logging
 import uuid
-from sqlmodel import SQLModel, Session, create_engine, select, text
+from sqlmodel import SQLModel, Session, create_engine, select, text, desc as order_desc
 from server.models.db import User, Issue, Response, Evaluation, Document, DocumentCommit, IssueRecordView, DocumentView
+from server.tools.common import to_doc_source
+from collections import defaultdict
 from server.tools.git import parse_repo
 
 logger = logging.getLogger(__name__)
@@ -156,11 +158,37 @@ class DatabaseService:
             results = session.exec(statement=statement, execution_options={"prebuffer_rows": True})
             return results
 
-    def list_document_views(self) -> list[DocumentView]:
-        views = []
-        for doc in self.list_documents():
-            commits = self.list_document_commits(doc.id)
-            first_commit = commits.first()
-            source = f"{parse_repo(doc.repo)}-{doc.branch}-{first_commit.commit}"
-            views.append(DocumentView(source=source, desc=doc.desc))
-        return views
+    def list_document_views(self, doc_state: str = None, only_latest: bool = False) -> list[DocumentView]:
+        with Session(self.engine) as session:
+            stmt = (
+                select(Document.id, Document.repo, Document.branch, Document.desc, DocumentCommit.commit, DocumentCommit.state)
+                .join(DocumentCommit, Document.id == DocumentCommit.document_id)
+            )
+            if doc_state is not None:
+                stmt = stmt.where(DocumentCommit.state == doc_state)
+            stmt = stmt.order_by(Document.repo, Document.branch, order_desc(DocumentCommit.create_at))
+
+            results = session.exec(stmt).all()
+
+            grouped = defaultdict(list)
+            final_list = []
+
+            for id, repo, branch, desc, commit, state in results:
+                grouped[(repo, branch)].append({
+                    "id": str(id),
+                    "source": to_doc_source(repo, branch, commit),
+                    "latest": False,
+                    "state": state,
+                    "desc": desc,
+                })
+
+            for key in grouped:
+                commits = grouped[key]
+                if commits:
+                    commits[0]["latest"] = True
+                if only_latest:
+                    final_list.extend([commits[0]])
+                    continue
+                final_list.extend(commits)
+
+            return [DocumentView(**item) for item in final_list]

@@ -8,10 +8,6 @@ deps:
 lint:
 	pylint **/*.py
 
-.PHONY: binary
-binary:
-	hack/build_binary.sh
-
 .PHONY: run-pgvector
 run-pgvector:
 	hack/run_pgvector.sh
@@ -27,10 +23,6 @@ run-streamlit:
 .PHONY: local/run-server
 local/run-server:
 	uvicorn server.main:app
-
-.PHONY: local/run-slack-bot
-local/run-slack-bot:
-	uvicorn slack.main:server
 
 .PHONY: local/run-streamlit
 local/run-streamlit:

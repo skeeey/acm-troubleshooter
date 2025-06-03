@@ -21,8 +21,9 @@ async def chat(req: Request,
                workflow_svc: WorkflowService = Depends(get_workflow_service)) -> Response:
     if is_empty(req.query):
         raise HTTPException(status_code=422, detail="the user inputs are required")
-    
-    docs = db_svc.list_document_views()
+
+    # TODO select the appropriate docs
+    docs = db_svc.list_document_views(doc_state="indexed", only_latest=True)
     if len(docs) == 0:
         raise HTTPException(status_code=500, detail="there are no docs")
 
