@@ -8,6 +8,10 @@ deps:
 lint:
 	pylint **/*.py
 
+.PHONY: install-downdoc
+install-downdoc:
+	npm install -g downdoc --save
+
 .PHONY: run-pgvector
 run-pgvector:
 	hack/run_pgvector.sh

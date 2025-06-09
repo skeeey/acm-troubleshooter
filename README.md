@@ -18,45 +18,16 @@ make deps
 3. Run the RESTful service
 
 ```sh
+make install-downdoc
+make run-pgvector
 make local/run-server
 ```
 
-4. Add docs
-
-```sh
-curl -s -X PUT --header "Content-Type: application/json" 127.0.0.1:8000/runbooksets \
-    -d '{"repo": "https://github.com/stolostron/foundation-docs.git", "branch": "main"}'
-```
-
-5. Run the web UI service
+4. Run the web UI service
 
 ```sh
 make local/run-streamlit
 ```
-
-## Runbook Guideline
-
-For a runbook, it should
-
-1. Give a title for the runbook, the title summarizes the issue that this runbook aims to diagnosis.
-2. Clearly and detailedly describe the issue, for example
-    - describe the issue's symptom, for example, the condition status of a resource when the issue happens, the error message, etc;
-    - describe why this issue happens and which components or resources will be impacted when this issue happens, etc.
-3. Clearly and detailedly describe describe the diagnosis steps, for example
-    - list the diagnosis steps one-by-one;
-    - specify whether the step should be run on the hub cluster or the managed cluster;
-    - if one step needs to refer to the other runbooks, using the related runbook title as the markdown link text, for example, `[runbook_title](runbook_location)`
-
-# Slack Integration
-
-1. Generate a runbook from a dialogue.
-2. Find suitable squads to assign the given issue
-3. Give a suggestion for the user's question based on ACM docs
-4. (TODO) Chat with the bot to resolve the issue in complex scenario
-    - Access the third system to get more info, e.g. JIRA/support cases/code repo
-    - Analyze the must-gather
-    - Analyze the user's screenshot/vidoe
-    - etc
 
 ## TODO
 - [x] support to ask ACM relevant questions/knowledge
