@@ -1,4 +1,0 @@
-delete from context;
-drop table context;
-drop table runbookset;
-drop table runbooksetversion;
