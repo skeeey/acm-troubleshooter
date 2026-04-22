@@ -1,3 +1,5 @@
+# Python version requirement: >=3.10,<3.13
+# See pyproject.toml for version constraints
 accelerate==1.2.0
 aiohappyeyeballs==2.4.3
 aiohttp==3.11.7
@@ -35,7 +37,7 @@ diskcache==5.6.3
 distro==1.9.0
 dnspython==2.7.0
 docker==7.1.0
-dspy==2.6.24
+dspy==2.6.27
 einops==0.8.0
 email_validator==2.2.0
 fastapi==0.115.5
@@ -199,7 +201,7 @@ tiktoken==0.8.0
 tokenizers==0.19.1
 toml==0.10.2
 tomlkit==0.13.2
-torch==2.5.1
+torch==2.6.0
 tornado==6.4.2
 tqdm==4.67.0
 transformers==4.44.2

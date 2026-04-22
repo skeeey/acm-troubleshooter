@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acm-troubleshooter"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+description = "ACM Troubleshooter"
+readme = "README.md"
+
+[tool.setuptools]
+py-modules = []

@@ -11,6 +11,9 @@ _output
 build
 dist
 troubleshooter.spec
+*.egg-info/
+*.egg
+.eggs/
 
 mlruns
 
