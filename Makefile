@@ -39,3 +39,7 @@ local/show-records:
 .PHONY: local/run-mlflow
 local/run-mlflow:
 	mlflow ui --port 5000
+
+.PHONY: v2/test
+v2/test:
+	.venv/bin/python -m pytest v2/tests/ -v
