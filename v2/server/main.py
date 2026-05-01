@@ -17,8 +17,10 @@ from v2.server.api.documents import router as documents_router
 from v2.server.api.documents import get_db_service, get_doc_dir, get_vector_service
 from v2.server.models.embeddings import BGE
 from v2.server.services.db import DatabaseService
+from v2.server.services.llm import LLMService
 from v2.server.services.rag import RAGService
 from v2.server.services.vector import VectorStoreService
+from v2.server.workflows.self_rag import SelfRAGService
 
 load_dotenv()
 
@@ -45,7 +47,7 @@ def _get_rag_service() -> RAGService:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _db_svc, _vector_svc
+    global _db_svc, _vector_svc, _rag_svc
 
     Settings.llm = None
     Settings.embed_model = HuggingFaceEmbedding(model_name=BGE.name)
@@ -56,6 +58,14 @@ async def lifespan(app: FastAPI):
     await _db_svc.init_db()
 
     _vector_svc = VectorStoreService(db_url=db_url, embed_dim=BGE.dims)
+
+    llm_svc = LLMService(
+        responder_model=os.getenv("LM_MODEL", "gpt-4o"),
+        grader_model=os.getenv("LM_GRADER_MODEL"),
+        api_base=os.getenv("LM_API_BASE"),
+        api_key=os.getenv("LM_API_KEY"),
+    )
+    _rag_svc = SelfRAGService(vector_svc=_vector_svc, llm_svc=llm_svc)
 
     doc_dir = _get_doc_dir()
     os.makedirs(doc_dir, exist_ok=True)
